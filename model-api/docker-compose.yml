@@ -1,0 +1,10 @@
+services:
+  model-api:
+    build: .
+    container_name: model-api
+    ports:
+      - "8001:8001"
+    volumes:
+      - .:/app
+      - /tmp:/tmp
+    restart: unless-stopped
