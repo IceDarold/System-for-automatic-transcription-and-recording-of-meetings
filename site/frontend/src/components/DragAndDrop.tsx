@@ -27,6 +27,8 @@ const FileDrop: React.FC<FileDropProps> = ({ onFileAccepted, claass }) => {
     const secondPage = document.getElementById("secondStep");
     const logrep = document.getElementById("LogReport");
     const txt = document.getElementById("noShowText");
+    const panel = document.getElementById("panel");
+
     if (inputPage) {
       inputPage.style.display = "none";
     }
@@ -35,6 +37,12 @@ const FileDrop: React.FC<FileDropProps> = ({ onFileAccepted, claass }) => {
     }
     if (loadingPage) {
       loadingPage.style.display = "flex";
+    }
+    if (logrep) {
+      logrep.style.display = "flex";
+    }
+    if (panel) {
+      panel.style.display = "none";
     }
     const formData = new FormData();
     formData.append("video", file);
@@ -63,6 +71,9 @@ const FileDrop: React.FC<FileDropProps> = ({ onFileAccepted, claass }) => {
       }
       if (txt) {
         txt.style.display = "none";
+      }
+      if (panel) {
+        panel.style.display = "flex";
       }
     }
   }
@@ -123,11 +134,11 @@ const FileDrop: React.FC<FileDropProps> = ({ onFileAccepted, claass }) => {
       onDrop={handleDrop}
       style={{
         border:
-          isDragging || isHover ? "2px dashed #FF645F" : "2px dashed #ccc",
+          isDragging || isHover ? "2px dashed #6366f1" : "2px dashed #ccc",
         borderRadius: "8px",
         padding: "30px",
         textAlign: "center",
-        color: isDragging || isHover ? "#FF645F" : "#6d7885",
+        color: isDragging || isHover ? "#6366f1" : "#6d7885",
         backgroundColor: "#fff",
         transition: "all 0.2s ease",
         cursor: "pointer",
@@ -137,6 +148,7 @@ const FileDrop: React.FC<FileDropProps> = ({ onFileAccepted, claass }) => {
       <input
         ref={fileInputRef}
         type="file"
+        accept="audio/*,video/*"
         onChange={handleFileInputChange}
         style={{ display: "none" }}
       />

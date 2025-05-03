@@ -1,13 +1,21 @@
+:root {
+  --main-color: #6366f1;
+}
+
 .App {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  font-family: Roboto;
   min-height: 100vh;
 }
 
+.divContentView {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: Roboto;
+}
+
 .header {
-  height: 72px;
+  z-index: 2;
+  height: 50px;
   min-width: 100vw;
   background-color: #fff;
   border-bottom: rgba(0, 0, 0, 0.12) solid 1px;
@@ -15,6 +23,8 @@
 }
 
 .mainContent {
+  padding-left: 50px;
+  padding-right: 60px;
   height: 100%;
   display: flex;
   flex-direction: row;
@@ -41,8 +51,10 @@
 .rightSide {
   border-top-right-radius: 16px;
   border-bottom-right-radius: 16px;
+  padding-right: 0px;
   background-color: #f9f9f9;
-  margin-right: 70px;
+  padding-top: 0px;
+  padding-left: 0px;
 }
 
 .dropdownVideo {
@@ -81,7 +93,7 @@
   align-self: center;
   width: 48px;
   height: 48px;
-  border: 5px solid #ff645f;
+  border: 5px solid var(--main-color);
   border-bottom-color: transparent;
   border-radius: 50%;
   display: inline-block;
@@ -116,7 +128,6 @@
 }
 
 .photoView {
-  width: 100%;
   display: flex;
   flex-direction: row;
   gap: 20px;
@@ -134,7 +145,7 @@
 }
 
 .mini:hover {
-  border: 2px dashed #ff645f;
+  border: 2px dashed var(--main-color);
 }
 
 .textUnderLine {
@@ -167,10 +178,244 @@
   height: 140px;
 }
 
-[data-status="acitve"] {
-  background-color: red;
+[data-status="active"] {
+  background-color: #eff0f2;
+}
+
+[data-status="passive"] {
+  background-color: #f9f9f9;
 }
 
 #panel {
   display: none;
+}
+
+.panel {
+  padding-right: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.panelHeader {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  flex: 1;
+}
+
+.panelItem {
+  text-align: center;
+  width: 100%;
+}
+
+.panelItem:hover {
+  cursor: pointer;
+}
+
+.rightSide .contentRightSide,
+.rightSide .LogReport,
+.rightSide .bigTitle {
+  margin-right: 70px;
+  padding-left: 24px;
+}
+
+.sidebar {
+  z-index: -1;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  min-height: 100vh;
+  background-color: #fff;
+  width: 60px;
+}
+
+/* ----------Login---- */
+
+.LoginPage {
+  display: flex;
+  flex-direction: row;
+  gap: 70px;
+  align-items: center;
+  justify-content: center;
+  /* width: 100vw; */
+  min-height: 100vh;
+  min-width: 100vw;
+}
+
+.contentReg {
+  display: flex;
+  align-self: center;
+  justify-content: center;
+  background-color: #fff;
+  max-width: 90%;
+  width: 450px;
+  border-radius: 16px;
+}
+
+.blockRegLog {
+  margin: 48px;
+}
+
+.headerRegLog {
+  margin-left: 40px;
+  margin-right: 40px;
+}
+
+.tabRegLog {
+  display: flex;
+  flex-direction: row;
+  padding: 0;
+}
+
+.tabRegLog:hover {
+  cursor: pointer;
+}
+
+.HeaderRegLogText {
+  width: 100%;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.HeaderRegLogText {
+  color: #171a1c;
+  text-align: center;
+  font-family: "Lato", sans-serif;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 28px; /* 140% */
+}
+
+.tabRegLog {
+  width: auto;
+  border: 1px solid #6366f1;
+  border-radius: 4px;
+}
+
+.passive-tabLogReg {
+  color: #464d53;
+  text-align: center;
+  font-family: "Lato", sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px; /* 114.286% */
+  padding: 8px 40px;
+  margin: 0px;
+}
+
+.active-tabLogReg {
+  background-color: #6366f1;
+  color: #fff;
+  text-align: center;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "cv03" on, "cv04" on;
+
+  /* New/1920px/Text XS (Body Short) */
+  font-family: "Lato", sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px; /* 114.286% */
+  padding: 8px 40px;
+  margin: 0px;
+}
+
+#Authorise {
+  width: 100%;
+  /* margin-left: 0; */
+}
+#Registration {
+  width: 100%;
+  /* margin-right: 0; */
+}
+
+#regForm {
+  display: none;
+}
+
+.authForm,
+.regForm {
+  display: flex;
+  flex-direction: column;
+  margin-top: 32px;
+  gap: 20px;
+  max-width: 90%;
+}
+
+.input-container {
+  position: relative;
+  width: 100%;
+}
+
+.inputForm {
+  min-height: 30px;
+  padding: 10px 16px;
+  width: 100%;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.input-container input:focus {
+  border-color: #6366f1;
+}
+
+.input-container label {
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #999;
+  padding: 0 5px;
+  pointer-events: none;
+  transition: 0.5s;
+}
+
+.input-container input:focus ~ label,
+.input-container input:valid ~ label {
+  top: 0;
+  font-size: 12px;
+  background: #fff;
+}
+
+.sendFormButton {
+  border: 0;
+  width: 110%;
+  padding: 17px 0;
+  border-radius: 6px;
+  color: #fff;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "cv03" on, "cv04" on;
+
+  /* New/Button 14 */
+  font-family: "Lato", sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 22px; /* 157.143% */
+}
+
+.sendFormButton:enabled {
+  background: #6366f1;
+  color: #fff;
+  cursor: pointer;
+}
+
+.sendFormButton:disabled {
+  cursor: default;
+  background: #f6f7f8;
+  color: #75808a;
+}
+
+.sendFormButton:hover:enabled {
+  background: #35379f;
 }

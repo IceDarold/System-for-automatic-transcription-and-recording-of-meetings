@@ -1,6 +1,8 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
+from models import LoginFormModel, RegistrationFormModel
+
 
 app = FastAPI()
 
@@ -43,3 +45,15 @@ async def load_video(video: UploadFile = File(...)):
 @app.get("/loadvideo")
 async def load_video_get():
     return {"message": "GET-запрос на /loadvideo работает"}
+
+
+@app.post("/sendLogin")
+async def getLogin(form_data: LoginFormModel):
+    if not check_db(form_data):
+        return HTTPException(status_code=400, detail="wrong login or password")
+
+@app.post("/sendRegistration")
+async def getRegistration(form_data: RegistrationFormModel):
+    if (form_data.password != form_data.repeat_password):
+        return HTTPException(status_code=400, detail="paswords different")
+    
