@@ -90,21 +90,41 @@ export default function Login() {
                       <input
                         className="inputForm"
                         type="text"
-                        name="name"
-                        id="name-reg"
+                        name="last_name"
+                        id="last-name-reg"
                         required
                       />
-                      <label htmlFor="name">ФИО</label>
+                      <label htmlFor="last_name">Фамилия</label>
+                    </div>
+                    <div className="input-container">
+                      <input
+                        className="inputForm"
+                        type="text"
+                        name="first_name"
+                        id="first-name-reg"
+                        required
+                      />
+                      <label htmlFor="first_name">Имя</label>
+                    </div>
+                    <div className="input-container">
+                      <input
+                        className="inputForm"
+                        type="text"
+                        name="middle_name"
+                        id="middle-name-reg"
+                        required
+                      />
+                      <label htmlFor="middle_name">Отчество</label>
                     </div>
                     <div className="input-container">
                       <input
                         className="inputForm"
                         type="email"
-                        name="login"
+                        name="email"
                         id="login-reg"
                         required
                       />
-                      <label htmlFor="login">Логин</label>
+                      <label htmlFor="email">Логин</label>
                     </div>
                     <div className="input-container">
                       <input
