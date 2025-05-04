@@ -8,6 +8,6 @@ done
 
 # Применяем миграции
 echo "Applying database migrations..."
-alembic upgrade head
+cd /app && PYTHONPATH=/app alembic upgrade head
 
 echo "Database initialization completed!" 

@@ -17,6 +17,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копирование исходного кода
 COPY . .
 
+# Добавляем текущую директорию в PYTHONPATH
+ENV PYTHONPATH=/app
+
 # Создание непривилегированного пользователя
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
