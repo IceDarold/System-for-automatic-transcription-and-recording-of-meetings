@@ -55,17 +55,17 @@ export default function Login() {
                 </div>
               </div>
               <div className="FormRegLog">
-                <form action={root + "/sendLogin"} method="post">
+                <form action={root + "/api/v1/auth/login"} method="post">
                   <div className="authForm" id="authForm">
                     <div className="input-container">
                       <input
                         className="inputForm"
                         type="email"
-                        name="login"
+                        name="username"
                         id="login-ath"
                         required
                       />
-                      <label htmlFor="login">Логин</label>
+                      <label htmlFor="username">Логин</label>
                     </div>
                     <div className="input-container">
                       <input
@@ -84,7 +84,7 @@ export default function Login() {
                     />
                   </div>
                 </form>
-                <form action={root + "/login/sendRegistration"} method="post">
+                <form action={root + "/api/v1/auth/register"} method="post">
                   <div className="regForm" id="regForm">
                     <div className="input-container">
                       <input
