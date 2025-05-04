@@ -10,7 +10,7 @@ cd backend
 # Создать виртуальное окружение, если его нет
 if [ ! -d "venv" ]; then
   echo "🔧 Создаём виртуальное окружение..."
-  python3 -m venv venv
+  python -m venv venv
 fi
 
 # Активация виртуального окружения

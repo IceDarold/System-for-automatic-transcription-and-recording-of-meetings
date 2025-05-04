@@ -7,8 +7,8 @@ import {
 } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-import Login from "./pages/loginPage";
-import MyProjectPage from "./pages/myProjectPage";
+import Login from "./page/loginPage";
+import MyProjectPage from "./page/myProjectPage";
 
 function App() {
   const [access_token, setAccess_token] = useState<string | null>(
