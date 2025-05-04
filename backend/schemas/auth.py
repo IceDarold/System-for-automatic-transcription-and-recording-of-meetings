@@ -5,7 +5,9 @@ from ..models.user import UserRole
 
 class UserBase(BaseModel):
     email: EmailStr
-    username: str
+    first_name: str
+    last_name: str
+    middle_name: Optional[str] = None
 
 
 class UserCreate(UserBase):
