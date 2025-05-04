@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     class Config:
         case_sensitive = True
         # Находим корневую директорию проекта
-        root_dir = Path(__file__).parent.parent.parent
+        root_dir = Path(__file__).resolve().parent.parent
         # Путь к глобальному .env файлу
         env_file = str(root_dir / ".env")
         # Проверяем существование файла
