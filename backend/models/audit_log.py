@@ -5,10 +5,13 @@ from database import Base
 
 
 class AuditAction(str, enum.Enum):
-    LOGIN = "login"
-    LOGOUT = "logout"
-    REGISTER = "register"
-    TOKEN_REFRESH = "token_refresh"
+    login = "login"
+    logout = "logout"
+    register = "register"
+    token_refresh = "token_refresh"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class AuditLog(Base):

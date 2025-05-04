@@ -17,6 +17,7 @@ router = APIRouter()
 
 @router.post("/register", response_model=Token)
 def register(
+    request: Request,
     db: Session = Depends(get_db),
     first_name: str = Form(...),
     last_name: str = Form(...),
@@ -60,7 +61,9 @@ def register(
     # Log registration
     audit_log = AuditLog(
         user_id=user.id,
-        action=AuditAction.REGISTER,
+        action=AuditAction.register,
+        ip_address=request.client.host,
+        user_agent=request.headers.get("user-agent"),
     )
     db.add(audit_log)
     db.commit()
@@ -99,7 +102,7 @@ def login(
     # Log login
     audit_log = AuditLog(
         user_id=user.id,
-        action=AuditAction.LOGIN,
+        action=AuditAction.login,
         ip_address=request.client.host,
         user_agent=request.headers.get("user-agent"),
     )
@@ -132,7 +135,7 @@ def refresh_token(
     # Log token refresh
     audit_log = AuditLog(
         user_id=current_user.id,
-        action=AuditAction.TOKEN_REFRESH,
+        action=AuditAction.token_refresh,
         ip_address=request.client.host,
         user_agent=request.headers.get("user-agent"),
     )
@@ -157,11 +160,21 @@ def logout(
     """
     audit_log = AuditLog(
         user_id=current_user.id,
-        action=AuditAction.LOGOUT,
+        action=AuditAction.logout,
         ip_address=request.client.host,
         user_agent=request.headers.get("user-agent"),
     )
     db.add(audit_log)
     db.commit()
 
-    return {"message": "Successfully logged out"} 
+    return {"message": "Successfully logged out"}
+
+
+@router.get("/me", response_model=UserResponse)
+def get_current_user_info(
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Get current user information.
+    """
+    return current_user 
