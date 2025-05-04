@@ -283,3 +283,29 @@
 .sendFormButton:hover:enabled {
   background: #35379f;
 }
+
+/* ------Badges------ */
+.badge {
+  display: flex;
+  flex-direction: row;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: Roboto;
+  font-size: 11px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 16px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+[data-color-badge="yellow"] {
+  background-color: rgba(255, 175, 60, 1);
+  color: rgba(255, 175, 60, 0.12);
+}
+
+[data-color-badge="default"] {
+  background-color: rgba(141, 202, 254, 1);
+  color: rgba(141, 202, 254, 0.12);
+}

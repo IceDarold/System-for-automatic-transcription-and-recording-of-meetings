@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   frontend:
@@ -8,12 +8,13 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - app-network
 
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
@@ -29,9 +30,15 @@ services:
       - ./backend:/app
       - ./.env:/app/.env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   db:
     image: postgres:15
@@ -45,10 +52,15 @@ services:
       - "5432:5432"
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
 
 networks:
   app-network:
-    driver: bridge 
+    driver: bridge

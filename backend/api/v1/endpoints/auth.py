@@ -8,7 +8,7 @@ from core import security
 from core.config import settings
 from core.deps import get_current_user, get_current_active_user
 from database import get_db
-from models.user import User
+from models.user import User, UserRole
 from models.audit_log import AuditLog, AuditAction
 from schemas.auth import UserCreate, UserResponse, Token
 
@@ -45,6 +45,7 @@ def register(
         last_name=last_name,
         middle_name=middle_name,
         password_hash=security.get_password_hash(password),
+        role="user"
     )
     db.add(user)
     db.commit()
