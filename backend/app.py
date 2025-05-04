@@ -1,6 +1,13 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
+from schemas import LoginFormModel, RegistrationFormModel
+from sqlalchemy.orm import Session
+from models import User, Base
+from database import engine, SessionLocal
+from schemas import UserCreate
+from database import database
+
 
 app = FastAPI()
 
@@ -16,6 +23,15 @@ middleware = [
 ]
 
 app = FastAPI(middleware=middleware)
+
+
+@app.on_event("startup")
+async def startup():
+    await database.connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
 
 @app.get("/")
 async def read_root():
@@ -43,3 +59,38 @@ async def load_video(video: UploadFile = File(...)):
 @app.get("/loadvideo")
 async def load_video_get():
     return {"message": "GET-запрос на /loadvideo работает"}
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.post("/sendRegistration")
+async def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.login == user.login).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Пользователь уже существует")
+    hashed_password = user.password
+
+    new_user = User(
+        name=user.name,
+        department=user.department,
+        login=user.login,
+        password_hash=hashed_password
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"message": "Регистрация успешна", "user": new_user.login}
+
+@app.post("/sendLogin")
+async def login_user(form_data: UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.login == form_data.login).first()
+    if not db_user or form_data.password != db_user.password_hash:
+        raise HTTPException(status_code=400, detail="Неверный логин или пароль")
+
+    return {"message": "Вход выполнен успешно"}
+    

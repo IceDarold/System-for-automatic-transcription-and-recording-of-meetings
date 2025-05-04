@@ -1,48 +1,12 @@
+@import url("https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap");
+:root {
+  --primary-color-high: #6366f1;
+  --light-background-color: #111827;
+}
+
 .App {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  font-family: Roboto;
+  font-family: "Ubuntu", sans-serif;
   min-height: 100vh;
-}
-
-.header {
-  height: 72px;
-  min-width: 100vw;
-  background-color: #fff;
-  border-bottom: rgba(0, 0, 0, 0.12) solid 1px;
-  margin-bottom: 12px;
-}
-
-.mainContent {
-  height: 100%;
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  justify-content: center;
-  margin-bottom: 60px;
-}
-.leftSide,
-.rightSide {
-  flex: 1;
-  padding: 20px 24px;
-  padding-top: 5px;
-  display: flex;
-  flex-direction: column;
-}
-
-.leftSide {
-  border-top-left-radius: 16px;
-  border-bottom-left-radius: 16px;
-  background-color: #fff;
-  margin-left: 70px;
-}
-
-.rightSide {
-  border-top-right-radius: 16px;
-  border-bottom-right-radius: 16px;
-  background-color: #f9f9f9;
-  margin-right: 70px;
 }
 
 .dropdownVideo {
@@ -67,8 +31,6 @@
 .bigTitle {
   color: #000;
   font-feature-settings: "liga" off, "clig" off;
-
-  /* R Headline Medium */
   font-family: Roboto;
   font-size: 16px;
   font-style: normal;
@@ -81,7 +43,7 @@
   align-self: center;
   width: 48px;
   height: 48px;
-  border: 5px solid #ff645f;
+  border: 5px solid var(--main-color);
   border-bottom-color: transparent;
   border-radius: 50%;
   display: inline-block;
@@ -98,79 +60,226 @@
   }
 }
 
-#loadingPage {
-  flex: 1;
-  display: none;
-  align-self: center;
-  justify-content: center;
+/* ------sidebar---- */
+
+.sidebar {
+  position: fixed;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 64px;
+  gap: 32px;
+  background-color: var(--light-background-color);
 }
 
-#secondStep {
-  display: none;
-  flex: 1;
+.sidebar-block-items {
+  display: flex;
   flex-direction: column;
 }
-
-.imgsrc {
-  height: 200px;
+.sidebar-item {
+  width: 64px;
+  height: 64px;
+  justify-content: center;
+  align-items: center;
 }
 
-.photoView {
-  width: 100%;
+[data-status-sidebar-item="active"] {
+  color: #fff;
+  background-color: var(--main-color);
+}
+
+[data-status-sidebar-item="passive"] {
+  color: var(--main-color);
+  background-color: var(--light-background-color);
+}
+
+/* ----------Login---- */
+
+#loginPage {
+  background-color: var(--light-background-color);
+}
+
+.LoginPage {
   display: flex;
   flex-direction: row;
-  gap: 20px;
+  gap: 70px;
+  align-items: center;
+  justify-content: center;
+  /* width: 100vw; */
+  min-height: 100vh;
+  min-width: 100vw;
 }
 
-.photoView img {
-  border-radius: 8px;
+.contentReg {
+  display: flex;
+  align-self: center;
+  justify-content: center;
+  background-color: #fff;
+  max-width: 90%;
+  width: 450px;
+  border-radius: 16px;
 }
 
-.mini {
-  flex-grow: 1;
-  min-width: 0;
-  height: 140px;
-  align-content: center;
+.blockRegLog {
+  margin: 48px;
 }
 
-.mini:hover {
-  border: 2px dashed #ff645f;
+.headerRegLog {
+  margin-left: 40px;
+  margin-right: 40px;
 }
 
-.textUnderLine {
-  color: #000;
-  font-feature-settings: "liga" off, "clig" off;
-  font-family: Roboto;
-  font-size: 13px;
+.tabRegLog {
+  display: flex;
+  flex-direction: row;
+  padding: 0;
+}
+
+.tabRegLog:hover {
+  cursor: pointer;
+}
+
+.HeaderRegLogText {
+  width: 100%;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.HeaderRegLogText {
+  color: #171a1c;
+  text-align: center;
+  font-family: "Lato", sans-serif;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 28px; /* 140% */
+}
+
+.tabRegLog {
+  width: auto;
+  border: 1px solid #6366f1;
+  border-radius: 4px;
+}
+
+.passive-tabLogReg {
+  color: #464d53;
+  text-align: center;
+  font-family: "Lato", sans-serif;
+  font-size: 14px;
   font-style: normal;
   font-weight: 400;
-  line-height: 16px;
+  line-height: 16px; /* 114.286% */
+  padding: 8px 40px;
+  margin: 0px;
 }
 
-.LogReport {
-  margin-top: 56px;
-  align-items: center;
-  align-self: center;
-  display: flex;
-  flex-direction: row;
-  gap: 6px;
-  padding: 16px 24px;
-  background-color: #f5f5f5;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+.active-tabLogReg {
+  background-color: #6366f1;
+  color: #fff;
+  text-align: center;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "cv03" on, "cv04" on;
+
+  /* New/1920px/Text XS (Body Short) */
+  font-family: "Lato", sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px; /* 114.286% */
+  padding: 8px 40px;
+  margin: 0px;
 }
 
-.maxi {
-  font-family: Roboto;
-  font-size: 20px;
-  align-content: center;
-  height: 140px;
+#Authorise {
+  width: 100%;
+  /* margin-left: 0; */
+}
+#Registration {
+  width: 100%;
+  /* margin-right: 0; */
 }
 
-[data-status="acitve"] {
-  background-color: red;
-}
-
-#panel {
+#regForm {
   display: none;
+}
+
+.authForm,
+.regForm {
+  display: flex;
+  flex-direction: column;
+  margin-top: 32px;
+  gap: 20px;
+  max-width: 90%;
+}
+
+.input-container {
+  position: relative;
+  width: 100%;
+}
+
+.inputForm {
+  min-height: 30px;
+  padding: 10px 16px;
+  width: 100%;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.input-container input:focus {
+  border-color: #6366f1;
+}
+
+.input-container label {
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #999;
+  padding: 0 5px;
+  pointer-events: none;
+  transition: 0.5s;
+}
+
+.input-container input:focus ~ label,
+.input-container input:valid ~ label {
+  top: 0;
+  font-size: 12px;
+  background: #fff;
+}
+
+.sendFormButton {
+  border: 0;
+  width: 110%;
+  padding: 17px 0;
+  border-radius: 6px;
+  color: #fff;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "cv03" on, "cv04" on;
+
+  /* New/Button 14 */
+  font-family: "Lato", sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 22px; /* 157.143% */
+}
+
+.sendFormButton:enabled {
+  background: #6366f1;
+  color: #fff;
+  cursor: pointer;
+}
+
+.sendFormButton:disabled {
+  cursor: default;
+  background: #f6f7f8;
+  color: #75808a;
+}
+
+.sendFormButton:hover:enabled {
+  background: #35379f;
 }
