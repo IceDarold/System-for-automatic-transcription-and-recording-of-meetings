@@ -3,6 +3,7 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from core.config import settings
+from models.user import UserRole
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -22,6 +23,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
+    # Convert enum to string value - always use value not name
+    if "role" in to_encode and hasattr(to_encode["role"], "value"):
+        to_encode["role"] = to_encode["role"].value
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
@@ -37,6 +41,13 @@ def create_refresh_token(data: dict) -> str:
 def verify_token(token: str) -> Optional[dict]:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        # Convert role string to enum
+        if "role" in payload:
+            try:
+                payload["role"] = UserRole(payload["role"].lower())
+            except ValueError:
+                # If the role is not valid, set it to USER
+                payload["role"] = UserRole.USER
         return payload
     except JWTError:
         return None 

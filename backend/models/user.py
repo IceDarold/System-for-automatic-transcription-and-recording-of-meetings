@@ -8,6 +8,9 @@ class UserRole(str, enum.Enum):
     USER = "user"
     SUPERADMIN = "superadmin"
 
+    def __str__(self):
+        return self.value
+
 
 class User(Base):
     __tablename__ = "users"
@@ -18,7 +21,7 @@ class User(Base):
     last_name = Column(String, nullable=False)
     middle_name = Column(String, nullable=True)
     password_hash = Column(String, nullable=False)
-    role = Column(Enum(UserRole), default=UserRole.USER, nullable=False)
+    role = Column(String, default="user", nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
