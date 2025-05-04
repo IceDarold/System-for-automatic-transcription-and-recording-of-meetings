@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import Header from "../components/Header";
 export default function Login() {
   const [auth, setAuth] = React.useState("active-tabLogReg");
   const [reg, setReg] = React.useState("passive-tabLogReg");
@@ -17,7 +16,6 @@ export default function Login() {
     region: "",
     login: "",
     password: "",
-    repeatPassword: "",
   });
   const clickOnAuth = () => {
     setAuth("active-tabLogReg");
@@ -57,8 +55,8 @@ export default function Login() {
   };
 
   const sendData = async (type: "login" | "registration") => {
-    const url = root + type === "login" ? "/sendLogin" : "/sendRegistration";
-
+    const url = root + (type === "login" ? "/sendLogin" : "/sendRegistration");
+    console.log(url);
     const body = JSON.stringify(
       type === "login" ? loginData : registrationData
     );
@@ -124,7 +122,7 @@ export default function Login() {
                   <div className="input-container">
                     <input
                       className="inputForm"
-                      type="email"
+                      type="text"
                       name="login"
                       id="login-ath"
                       value={loginData.login}
@@ -179,12 +177,12 @@ export default function Login() {
                       onChange={(e) => handleChange(e, "registration")}
                       required
                     />
-                    <label htmlFor="region">Регион</label>
+                    <label htmlFor="region">Департамент</label>
                   </div>
                   <div className="input-container">
                     <input
                       className="inputForm"
-                      type="email"
+                      type="text"
                       name="login"
                       id="login-reg"
                       value={registrationData.login}
@@ -204,18 +202,6 @@ export default function Login() {
                       required
                     />
                     <label htmlFor="password">Пароль</label>
-                  </div>
-                  <div className="input-container">
-                    <input
-                      className="inputForm"
-                      id="repeat-password-reg"
-                      type="password"
-                      name="repeat-password"
-                      value={registrationData.repeatPassword}
-                      onChange={(e) => handleChange(e, "registration")}
-                      required
-                    />
-                    <label htmlFor="repeat-password">Повторить пароль</label>
                   </div>
                   <input
                     className="sendFormButton"

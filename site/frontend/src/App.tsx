@@ -11,7 +11,7 @@ import Sidebar from "./components/Sidebar";
 import Login from "./pages/loginPage";
 
 const Layout = () => (
-  <div style={{ display: "flex" }}>
+  <div>
     <Sidebar />
     <div>
       <Outlet />

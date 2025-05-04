@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import placeholder from "../images/placeholder.jpg";
 import FileDrop from "../components/DragAndDrop";
 import info from "../images/info.svg";
-import Header from "../components/Header";
 
 export default function LoadPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -69,7 +68,6 @@ export default function LoadPage() {
   };
   return (
     <div className="divContentView">
-      <Header />
       <div className="mainContent">
         <div className="leftSide">
           <div className="step" id="firstStep">
