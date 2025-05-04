@@ -23,6 +23,12 @@ def register(
 ) -> Any:
     """
     Register new user.
+    
+    - **email**: Email пользователя (уникальный)
+    - **first_name**: Имя пользователя
+    - **last_name**: Фамилия пользователя
+    - **middle_name**: Отчество пользователя (опционально)
+    - **password**: Пароль пользователя
     """
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
@@ -33,7 +39,9 @@ def register(
     
     user = User(
         email=user_in.email,
-        username=user_in.username,
+        first_name=user_in.first_name,
+        last_name=user_in.last_name,
+        middle_name=user_in.middle_name,
         password_hash=security.get_password_hash(user_in.password),
     )
     db.add(user)
