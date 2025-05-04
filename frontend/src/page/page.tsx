@@ -7,7 +7,7 @@ function Sidebar() {
     for (let i = 0; i < els.length; i += 1) {
       if (
         els[i] &&
-        els[i].id != "sidebar-item-" + location.pathname.substring(1)
+        els[i].id !== "sidebar-item-" + location.pathname.substring(1)
       ) {
         els[i].setAttribute("data-status-sidebar-item", "passive");
       }
