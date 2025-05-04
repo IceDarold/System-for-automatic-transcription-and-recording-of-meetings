@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
 from sqlalchemy.sql import func
 import enum
-from ..database import Base
+from database import Base
 
 
 class AuditAction(str, enum.Enum):

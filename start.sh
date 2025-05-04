@@ -13,15 +13,20 @@ if [ ! -d "venv" ]; then
   python -m venv venv
 fi
 
+
 # Активация виртуального окружения
 if [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "darwin"* ]]; then
   source venv/bin/activate
 elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
-  source venv/Scripts/activate
+  echo " WINDOWS ACTIVATED"
+  source "venv/Scripts/activate"
+  echo "✅ Используется Python: $(which python)"
+  echo "📦 Интерпретатор: $(python -c 'import sys; print(sys.executable)')"
 else
   echo "⚠️ Неизвестная ОС. Попробуем использовать bin для Unix..."
   source venv/bin/activate
 fi
+python checkPythonGlobal.py
 
 # Установить зависимости, если их нет
 if [ ! -f "venv/.requirements_installed" ]; then
