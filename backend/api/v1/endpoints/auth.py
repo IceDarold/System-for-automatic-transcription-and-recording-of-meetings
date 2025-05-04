@@ -1,6 +1,6 @@
 from datetime import timedelta
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -17,32 +17,33 @@ router = APIRouter()
 
 @router.post("/register", response_model=Token)
 def register(
-    *,
     db: Session = Depends(get_db),
-    user_in: UserCreate,
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    middle_name: str = Form(None),
+    email: str = Form(...),
+    password: str = Form(...),
 ) -> Any:
     """
-    Register new user.
-    
+    Register new user (form-data).
     - **email**: Email пользователя (уникальный)
     - **first_name**: Имя пользователя
     - **last_name**: Фамилия пользователя
     - **middle_name**: Отчество пользователя (опционально)
     - **password**: Пароль пользователя
     """
-    user = db.query(User).filter(User.email == user_in.email).first()
+    user = db.query(User).filter(User.email == email).first()
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this email already exists in the system.",
         )
-    
     user = User(
-        email=user_in.email,
-        first_name=user_in.first_name,
-        last_name=user_in.last_name,
-        middle_name=user_in.middle_name,
-        password_hash=security.get_password_hash(user_in.password),
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        middle_name=middle_name,
+        password_hash=security.get_password_hash(password),
     )
     db.add(user)
     db.commit()
