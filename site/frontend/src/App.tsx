@@ -1,30 +1,37 @@
 import "./App.css";
-import LoadPage from "./pages/loadPage";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Outlet,
+  Navigate,
 } from "react-router-dom";
+import { useEffect, useState } from "react";
 
-import Sidebar from "./components/Sidebar";
 import Login from "./pages/loginPage";
-
-const Layout = () => (
-  <div>
-    <Sidebar />
-    <div>
-      <Outlet />
-    </div>
-  </div>
-);
+import MyProjectPage from "./pages/myProjectPage";
 
 function App() {
+  const [access_token, setAccess_token] = useState<string | null>(
+    localStorage.getItem("access_token")
+  );
+  useEffect(() => {
+    setAccess_token(localStorage.getItem("access_token"));
+  });
   return (
     <Router>
       <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<LoadPage />} />
+        <Route>
+          <Route
+            path="/"
+            element={
+              access_token ? (
+                <Navigate to="/allMeetings" replace />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route path="/allMeetings" element={<MyProjectPage />} />
           <Route path="/login" element={<Login />} />
         </Route>
       </Routes>

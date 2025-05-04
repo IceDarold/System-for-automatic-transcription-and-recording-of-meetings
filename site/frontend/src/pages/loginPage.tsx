@@ -98,7 +98,7 @@ export default function Login() {
     }
   };
   return (
-    <div className="divContentView">
+    <div className="divContentView" id="loginPage">
       <div className="LoginPage">
         <div className="contentReg">
           <div className="RegLogMenu">
@@ -166,18 +166,6 @@ export default function Login() {
                       required
                     />
                     <label htmlFor="name">ФИО</label>
-                  </div>
-                  <div className="input-container">
-                    <input
-                      className="inputForm"
-                      type="text"
-                      name="region"
-                      id="region-reg"
-                      value={registrationData.region}
-                      onChange={(e) => handleChange(e, "registration")}
-                      required
-                    />
-                    <label htmlFor="region">Департамент</label>
                   </div>
                   <div className="input-container">
                     <input
