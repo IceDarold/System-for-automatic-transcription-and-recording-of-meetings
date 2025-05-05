@@ -29,4 +29,4 @@ RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Start the application
-CMD ["/app/scripts/init_db.sh"] 
+CMD ["bash", "scripts/init_db.sh"] 

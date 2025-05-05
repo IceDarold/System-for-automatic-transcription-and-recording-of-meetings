@@ -38,8 +38,7 @@ class MeetingResponse(BaseModel):
     tags: List[TagResponse]
     participants: List[UserResponse]
     created_by: UserResponse
-    short_description: Optional[str]
-    thumbnail_url: Optional[str]
+    description: Optional[str]
     access_level: AccessLevel
     status: MeetingStatus
     processing_progress: int = Field(ge=0, le=100)

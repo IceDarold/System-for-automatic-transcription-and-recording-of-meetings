@@ -73,7 +73,7 @@ async def get_meetings(
         search_term = search_params.search
         # Use full-text search with Russian language support
         query = query.filter(
-            func.to_tsvector('russian', Meeting.title + ' ' + func.coalesce(Meeting.short_description, '')).op('@@')(
+            func.to_tsvector('russian', Meeting.title + ' ' + func.coalesce(Meeting.description, '')).op('@@')(
                 func.to_tsquery('russian', func.plainto_tsquery('russian', search_term))
             )
         )
@@ -139,8 +139,7 @@ async def get_meetings(
             tags=[{"id": tag.id, "label": tag.label} for tag in meeting.tags],
             participants=[{"id": p.id, "name": f"{p.first_name} {p.last_name}"} for p in meeting.participants],
             created_by={"id": meeting.created_by.id, "name": f"{meeting.created_by.first_name} {meeting.created_by.last_name}"},
-            short_description=meeting.short_description,
-            thumbnail_url=meeting.thumbnail_url,
+            description=meeting.description,
             access_level=meeting.access_level,
             status=meeting.status,
             processing_progress=meeting.processing_progress,
@@ -260,8 +259,7 @@ async def get_meeting_detail(
         tags=[{"id": tag.id, "label": tag.label} for tag in meeting.tags],
         participants=[{"id": p.id, "name": f"{p.first_name} {p.last_name}"} for p in meeting.participants],
         created_by={"id": meeting.created_by.id, "name": f"{meeting.created_by.first_name} {meeting.created_by.last_name}"},
-        short_description=meeting.short_description,
-        thumbnail_url=meeting.thumbnail_url,
+        description=meeting.description,
         access_level=meeting.access_level,
         status=meeting.status,
         processing_progress=meeting.processing_progress,

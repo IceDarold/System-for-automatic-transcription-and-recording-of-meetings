@@ -35,7 +35,7 @@ def check_meeting_owner(meeting: Meeting, user: User):
 async def create_meeting_draft(
     title: str = Form(...),
     date: datetime = Form(...),
-    short_description: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -46,7 +46,7 @@ async def create_meeting_draft(
     meeting = Meeting(
         title=title,
         date=date,
-        short_description=short_description,
+        description=description,
         status=MeetingStatus.pending,
         created_by_id=current_user.id,
         access_level=AccessLevel.private

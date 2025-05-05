@@ -26,6 +26,8 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=meeting_system
+      - POSTGRES_PORT=5432
+      - RESET_DB=true
     volumes:
       - ./backend:/app
       - ./.env:/app/.env
