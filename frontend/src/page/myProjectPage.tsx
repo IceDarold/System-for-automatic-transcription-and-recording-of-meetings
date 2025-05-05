@@ -2,9 +2,10 @@ import Page from "./page";
 import Searcher from "../components/Searcher";
 import { useNavigate } from "react-router-dom";
 import CardMyProject from "../components/CardMyProject";
+import { useEffect, useState } from "react";
 
 interface CardData {
-  id: string;
+  id: number;
   main: string;
   date: string;
   badges: string[];
@@ -12,30 +13,47 @@ interface CardData {
   description: string;
   status: string;
 }
-const fakeData: CardData[] = [
-  {
-    id: "1",
-    main: "Запись конференции по улучшению финансовой системы",
-    date: "19.11.2024",
-    badges: ["Разработка систем по обеспечению полевых условий", "Посев полей"],
-    speakers: ["Speaker_01", "Speaker_02"],
-    description:
-      "Задача засеивания полей решает огромную задачу по использованию пространства",
-    status: "Опубликовано",
-  },
-  {
-    id: "2",
-    main: "Запись конференции по улучшению финансовой системы",
-    date: "19.11.2024",
-    badges: ["Разработка систем по обеспечению полевых условий", "Посев полей"],
-    speakers: ["Speaker_01", "Speaker_02"],
-    description:
-      "Задача засеивания полей решает огромную задачу по использованию пространства",
-    status: "Опубликовано",
-  },
-];
+
+function formater(data: { items: any[] }): CardData[] {
+  return data.items.map((item) => ({
+    id: item.id,
+    main: item.title,
+    date: new Date(item.date).toLocaleDateString(), // формат даты по-человечески
+    badges: item.tags.map((tag: any) => tag.label),
+    speakers: item.participants.map((participant: any) => participant.name),
+    description: item.description,
+    status: item.is_ready ? "Опубликовано" : "В работе",
+  }));
+}
+
+const root = "http://127.0.0.1:8000";
 function MyProjectPage() {
+  const [CardDataLoad, setCardDataLoad] = useState<CardData[]>([]);
   const navigate = useNavigate();
+  async function fetchMeetings() {
+    try {
+      const response = await fetch(root + "/api/v1/meetings", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ошибка HTTP: ${response.status}`);
+      }
+
+      const data = await response.json(); // парсим JSON
+      console.log("Данные с бэка:", data);
+      setCardDataLoad(formater(data));
+    } catch (error) {
+      console.error("Ошибка при запросе:", error);
+    }
+  }
+  useEffect(() => {
+    fetchMeetings();
+  });
   return (
     <Page>
       <div className="Content">
@@ -51,7 +69,7 @@ function MyProjectPage() {
           </button>
         </div>
         <div className="myProjectsContent">
-          {fakeData.map((item: CardData) => (
+          {CardDataLoad.map((item: CardData) => (
             <CardMyProject
               key={item.id}
               main={item.main}

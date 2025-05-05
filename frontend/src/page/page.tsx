@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import Icon from "../Icons/Icon";
 function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -40,7 +41,10 @@ function Sidebar() {
             handleClick("sidebar-item-allMeetings", "/allMeetings");
           }}
         >
-          1
+          <Icon
+            type="database"
+            color={location.pathname === "/allMeetings" ? "#fff" : "#6366f1"}
+          />
         </div>
         <div
           className="sidebar-item"
@@ -49,7 +53,10 @@ function Sidebar() {
             handleClick("sidebar-item-myMeetings", "/myMeetings");
           }}
         >
-          2
+          <Icon
+            type="file-text"
+            color={location.pathname === "/myMeetings" ? "#fff" : "#6366f1"}
+          />
         </div>
         <div
           className="sidebar-item"
@@ -58,7 +65,10 @@ function Sidebar() {
             handleClick("sidebar-item-teams", "/teams");
           }}
         >
-          3
+          <Icon
+            type="briefcase"
+            color={location.pathname === "/teams" ? "#fff" : "#6366f1"}
+          />
         </div>
       </div>
     </div>

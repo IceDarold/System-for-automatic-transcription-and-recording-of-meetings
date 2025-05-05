@@ -52,6 +52,7 @@ export default function Login() {
     } else if (formType === "register") {
       urlSend += registerEndpoint;
     }
+    console.log(urlSend);
     try {
       const response = await fetch(urlSend, {
         method: "POST",
