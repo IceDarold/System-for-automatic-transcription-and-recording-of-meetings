@@ -34,3 +34,4 @@ class User(Base):
     created_meetings = relationship("Meeting", back_populates="created_by", foreign_keys="Meeting.created_by_id")
     participated_meetings = relationship("Meeting", secondary="meeting_participants", back_populates="participants")
     accessible_meetings = relationship("Meeting", secondary="meeting_access", back_populates="access_users")
+    transcript_blocks = relationship("TranscriptBlock", back_populates="speaker")

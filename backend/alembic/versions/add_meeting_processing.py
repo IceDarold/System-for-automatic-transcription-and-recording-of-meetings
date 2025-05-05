@@ -2,7 +2,7 @@
 
 Revision ID: add_meeting_processing
 Revises: add_user_fio
-Create Date: 2024-02-04 20:00:00.000000
+Create Date: 2024-02-04 20:15:00.000000
 
 """
 from alembic import op

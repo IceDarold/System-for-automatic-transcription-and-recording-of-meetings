@@ -64,7 +64,7 @@ class MeetingSearchParams(BaseModel):
     access_level: Optional[AccessLevel] = None
     status: Optional[MeetingStatus] = None
     created_by_id: Optional[int] = None
-    sort: str = Field("created_at_desc", regex="^(created_at_desc|created_at_asc|date_desc|date_asc)$")
+    sort: str = Field("created_at_desc", pattern="^(created_at_desc|created_at_asc|date_desc|date_asc)$")
     limit: int = Field(10, ge=1, le=50)
     offset: int = Field(0, ge=0)
 

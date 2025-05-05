@@ -74,7 +74,7 @@ class Meeting(Base):
     access_users = relationship("User", secondary=meeting_access, back_populates="accessible_meetings")
     
     # New relationships
-    files = relationship("File", back_populates="meeting")
+    files = relationship("File", primaryjoin="and_(File.meeting_id==Meeting.id, File.meeting_id!=None)", back_populates="meeting")
     transcript_blocks = relationship("TranscriptBlock", back_populates="meeting")
     
     # File relationships

@@ -5,10 +5,11 @@ from typing import List, Optional
 from datetime import datetime
 
 from database import get_db
-from models.meeting import Meeting, AccessLevel, MeetingStatus
+from models.meeting import Meeting, AccessLevel, MeetingStatus, Tag
 from models.user import User, UserRole
+from models.transcript import TranscriptBlock
+from schemas.meeting import MeetingResponse, MeetingListResponse, MeetingDetailResponse, MeetingSearchParams, TranscriptBlockResponse, UserResponse
 from core.auth import get_current_user
-from schemas.meeting import MeetingResponse, MeetingListResponse, MeetingDetailResponse, MeetingSearchParams
 from core.audit import log_action
 
 router = APIRouter()
@@ -242,7 +243,7 @@ async def get_meeting_detail(
                 text=block.text,
                 confidence=block.confidence,
                 language=block.language,
-                metadata=block.metadata
+                metadata=block.transcript_metadata
             )
             for block in meeting.transcript_blocks
         ]

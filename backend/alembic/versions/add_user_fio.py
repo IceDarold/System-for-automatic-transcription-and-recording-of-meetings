@@ -2,7 +2,7 @@
 
 Revision ID: add_user_fio
 Revises: initial_migration
-Create Date: 2024-02-04 19:30:00.000000
+Create Date: 2024-02-04 20:00:00.000000
 
 """
 from alembic import op

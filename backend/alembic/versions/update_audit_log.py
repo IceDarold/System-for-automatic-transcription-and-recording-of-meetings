@@ -19,7 +19,7 @@ def upgrade() -> None:
     # Add new columns to audit_logs table
     op.add_column('audit_logs', sa.Column('resource_id', sa.Integer(), nullable=True))
     op.add_column('audit_logs', sa.Column('resource_type', sa.String(), nullable=True))
-    op.add_column('audit_logs', sa.Column('metadata', postgresql.JSON(astext_type=sa.Text()), nullable=True))
+    op.add_column('audit_logs', sa.Column('audit_metadata', postgresql.JSON(astext_type=sa.Text()), nullable=True))
 
     # Update auditaction enum
     op.execute("ALTER TYPE auditaction ADD VALUE IF NOT EXISTS 'view_meeting'")
@@ -28,10 +28,10 @@ def upgrade() -> None:
     op.execute("ALTER TYPE auditaction ADD VALUE IF NOT EXISTS 'delete_meeting'")
 
 def downgrade() -> None:
-    # Remove columns from audit_logs table
-    op.drop_column('audit_logs', 'metadata')
-    op.drop_column('audit_logs', 'resource_type')
+    # Drop columns from audit_logs table
     op.drop_column('audit_logs', 'resource_id')
+    op.drop_column('audit_logs', 'resource_type')
+    op.drop_column('audit_logs', 'audit_metadata')
 
     # Note: We cannot remove enum values in PostgreSQL
     # The enum values will remain in the database 

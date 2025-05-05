@@ -15,7 +15,7 @@ class TranscriptBlock(Base):
     text = Column(Text, nullable=False)
     confidence = Column(Float, nullable=False)  # Confidence score 0-1
     language = Column(String(2), nullable=False, default="ru")  # ISO 639-1 language code
-    metadata = Column(JSON, nullable=True)      # Additional metadata as JSON
+    transcript_metadata = Column(JSON, nullable=True)      # Additional metadata as JSON
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

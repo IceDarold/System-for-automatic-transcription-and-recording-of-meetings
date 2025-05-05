@@ -24,8 +24,9 @@ class File(Base):
     size = Column(Integer, nullable=False)  # size in bytes
     url = Column(String, nullable=False)
     storage_path = Column(String, nullable=False)
+    meeting_id = Column(Integer, ForeignKey("meetings.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    meeting = relationship("Meeting", back_populates="files") 
+    meeting = relationship("Meeting", foreign_keys=[meeting_id], back_populates="files")

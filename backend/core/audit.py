@@ -8,25 +8,31 @@ async def log_action(
     action: str,
     resource_id: int = None,
     resource_type: str = None,
-    metadata: dict = None
+    audit_metadata: dict = None,
+    ip_address: str = None,
+    user_agent: str = None
 ) -> None:
     """
-    Log a user action in the audit log.
+    Log an action in the audit log.
     
     Args:
         db: Database session
         user_id: ID of the user performing the action
-        action: Type of action (e.g., 'view_meeting', 'create_meeting')
+        action: Type of action (must be one of AuditAction values)
         resource_id: ID of the resource being acted upon (optional)
-        resource_type: Type of resource (e.g., 'meeting', 'user') (optional)
-        metadata: Additional metadata about the action (optional)
+        resource_type: Type of the resource (optional)
+        audit_metadata: Additional metadata about the action (optional)
+        ip_address: IP address of the user (optional)
+        user_agent: User agent string (optional)
     """
     audit_log = AuditLog(
         user_id=user_id,
         action=action,
         resource_id=resource_id,
         resource_type=resource_type,
-        metadata=metadata,
+        audit_metadata=audit_metadata,
+        ip_address=ip_address,
+        user_agent=user_agent,
         created_at=datetime.utcnow()
     )
     

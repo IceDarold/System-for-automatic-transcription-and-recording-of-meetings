@@ -26,7 +26,7 @@ class AuditLog(Base):
     action = Column(String, nullable=False)
     resource_id = Column(Integer, nullable=True)
     resource_type = Column(String, nullable=True)
-    metadata = Column(JSON, nullable=True)
+    audit_metadata = Column(JSON, nullable=True)
     ip_address = Column(String, nullable=True)
     user_agent = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now()) 

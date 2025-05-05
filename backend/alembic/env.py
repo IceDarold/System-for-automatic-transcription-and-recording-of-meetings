@@ -9,15 +9,15 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.config import settings
-from models.user import Base as UserBase
-from models.audit_log import Base as AuditLogBase
+from database import Base
+import models  # This will import all models
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = [UserBase.metadata, AuditLogBase.metadata]
+target_metadata = Base.metadata
 
 def get_url():
     return settings.SQLALCHEMY_DATABASE_URI

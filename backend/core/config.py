@@ -1,6 +1,6 @@
 from typing import Optional
-from pydantic_settings import BaseSettings
-from pydantic import EmailStr, validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import EmailStr, field_validator
 import secrets
 import os
 from pathlib import Path
@@ -24,21 +24,22 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "meeting_system"
     SQLALCHEMY_DATABASE_URI: Optional[str] = None
 
-    @validator("SQLALCHEMY_DATABASE_URI", pre=True)
-    def assemble_db_connection(cls, v: Optional[str], values: dict[str, any]) -> any:
+    # Model API settings
+    MODEL_API_URL: str = "http://model-api:8000"  # Default for Docker
+    MODEL_API_TIMEOUT: int = 300  # 5 minutes timeout for long-running tasks
+
+    @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
+    @classmethod
+    def assemble_db_connection(cls, v: Optional[str], values: dict) -> str:
         if isinstance(v, str):
             return v
         return f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}/{values.get('POSTGRES_DB')}?client_encoding=utf8"
 
-    class Config:
-        case_sensitive = True
-        # Находим корневую директорию проекта
-        root_dir = Path(__file__).resolve().parent.parent
-        # Путь к глобальному .env файлу
-        env_file = str(root_dir / ".env")
-        # Проверяем существование файла
-        if not os.path.exists(env_file):
-            raise FileNotFoundError(f"Configuration file not found: {env_file}")
+    model_config = SettingsConfigDict(
+        case_sensitive=True,
+        env_file=str(Path(__file__).resolve().parent.parent / ".env"),
+        env_file_encoding='utf-8'
+    )
 
 
 settings = Settings() 
