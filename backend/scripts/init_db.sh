@@ -40,8 +40,4 @@ fi
 
 # Заполняем базу тестовыми данными
 echo "Seeding database with test data..."
-python scripts/seed_all.py
-
-# Запускаем приложение
-echo "Starting application..."
-exec uvicorn app:app --host 0.0.0.0 --port 8000 
+python scripts/seed_all.py 

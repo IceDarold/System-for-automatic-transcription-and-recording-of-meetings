@@ -2,6 +2,11 @@
 :root {
   --primary-color-high: #6366f1;
   --light-background-color: #111827;
+  --strong-background-color: #09090b;
+
+  /* ---secondary--- */
+  --secondary-lower: #1c1c1e;
+  --secondary-medium: #a4a4a5;
 }
 
 .App {
@@ -77,23 +82,32 @@
   flex-direction: column;
 }
 .sidebar-item {
+  text-align: center;
   width: 64px;
   height: 64px;
   justify-content: center;
-  align-items: center;
+  align-content: center;
 }
 
 [data-status-sidebar-item="active"] {
   color: #fff;
-  background-color: var(--main-color);
+  background-color: var(--primary-color-high);
 }
 
 [data-status-sidebar-item="passive"] {
-  color: var(--main-color);
+  color: var(--primary-color-high);
   background-color: var(--light-background-color);
 }
 
 /* ----------Login---- */
+
+#error-login-text-login,
+#error-login-text-register {
+  display: none;
+  width: 100%;
+  text-align: right;
+  color: red;
+}
 
 #loginPage {
   background-color: var(--light-background-color);
@@ -308,4 +322,97 @@
 [data-color-badge="default"] {
   background-color: rgba(141, 202, 254, 1);
   color: rgba(141, 202, 254, 0.12);
+}
+
+/* ---page--- */
+.page {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--strong-background-color);
+  flex-direction: row;
+}
+.mainContent {
+  margin-left: 64px;
+  padding: 32px;
+  width: 100%;
+}
+
+.Content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 32px;
+}
+
+/*---search--- */
+.search {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  gap: 8px;
+  background-color: var(--secondary-lower);
+  max-width: 40vw;
+}
+.search input {
+  display: flex;
+  width: 100%;
+  outline: none;
+  border: 0;
+  background-color: var(--secondary-lower);
+  color: var(--secondary-medium);
+  font-family: Roboto;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.search input:active {
+  outline: none;
+  caret-color: var(--secondary-lower);
+}
+
+.panelFilters {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  gap: 16px;
+  width: 100%;
+}
+
+.primaryButton {
+  white-space: nowrap;
+  padding: 10px 12px;
+  color: #fff;
+  outline: none;
+  border: 0;
+  border-radius: 8px;
+  background-color: var(--primary-color-high);
+}
+
+/* -----CardMyProject--- */
+
+.card {
+  display: flex;
+  background-color: var(--secondary-lower);
+  padding: 16px 20px;
+  width: auto;
+}
+
+.CardContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-main {
+  color: #fff;
+}
+
+.myProjectsContent {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
 }
