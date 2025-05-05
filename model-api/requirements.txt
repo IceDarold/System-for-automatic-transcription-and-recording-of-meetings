@@ -4,3 +4,6 @@ python-multipart
 openai
 python-dotenv
 requests
+pytest
+httpx
+pytest-asyncio
