@@ -43,11 +43,3 @@ async def chat_answer(data: ChatInput):
     """
     result = meeting_chatbot.answer_question(data.meeting_id, data.question)
     return result
-
-@app.get("/chat/meeting/{meeting_id}")
-async def get_meeting_info(meeting_id: str):
-    """
-    Endpoint for retrieving information about a specific meeting.
-    """
-    result = meeting_chatbot.get_meeting_info(meeting_id)
-    return result 
