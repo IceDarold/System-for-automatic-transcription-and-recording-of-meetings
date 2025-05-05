@@ -13,7 +13,7 @@ max_retries=30
 retry_count=0
 
 while [ $retry_count -lt $max_retries ]; do
-    if PGPASSWORD=$POSTGRES_PASSWORD pg_isready -h "$POSTGRES_SERVER" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" > /dev/null 2>&1; then
+    if PGPASSWORD=$POSTGRES_PASSWORD pg_isready -h "$POSTGRES_SERVER" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "postgres" > /dev/null 2>&1; then
         echo "Database is ready!"
         break
     fi
@@ -28,9 +28,15 @@ if [ $retry_count -eq $max_retries ]; then
     exit 1
 fi
 
-# Применяем миграции
-echo "Running database migrations..."
-alembic upgrade head
+# Проверка, нужно ли сбросить базу данных
+if [ "$RESET_DB" = "true" ]; then
+    echo "Resetting database..."
+    python scripts/reset_db.py
+else
+    # Применяем миграции
+    echo "Running database migrations..."
+    alembic upgrade head || true
+fi
 
 # Заполняем базу тестовыми данными
 echo "Seeding database with test data..."
