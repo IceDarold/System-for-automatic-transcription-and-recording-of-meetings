@@ -1,3 +1,3 @@
 """
-Meeting Transcription System Backend
-""" 
+Backend package initialization
+"""

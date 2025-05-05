@@ -2,6 +2,7 @@ from sqlalchemy import Boolean, Column, Integer, String, DateTime, Enum, Foreign
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import enum
+from datetime import datetime
 from database import Base
 
 # Association tables for many-to-many relationships
@@ -92,6 +93,52 @@ class Meeting(Base):
     def is_ready(self) -> bool:
         return self.status == MeetingStatus.done
 
+    def __init__(self, **kwargs):
+        # Validate title
+        if not kwargs.get("title"):
+            raise ValueError("Title is required")
+        
+        # Validate date
+        date = kwargs.get("date")
+        if not date:
+            raise ValueError("Date is required")
+        if isinstance(date, str):
+            try:
+                kwargs["date"] = datetime.strptime(date, "%Y-%m-%d").date()
+            except ValueError:
+                raise ValueError("Invalid date format. Use YYYY-MM-DD")
+        
+        # Validate time fields
+        start_time = kwargs.get("start_time")
+        end_time = kwargs.get("end_time")
+        if start_time and isinstance(start_time, str):
+            try:
+                kwargs["start_time"] = datetime.strptime(start_time, "%H:%M:%S").time()
+            except ValueError:
+                raise ValueError("Invalid start time format. Use HH:MM:SS")
+        if end_time and isinstance(end_time, str):
+            try:
+                kwargs["end_time"] = datetime.strptime(end_time, "%H:%M:%S").time()
+            except ValueError:
+                raise ValueError("Invalid end time format. Use HH:MM:SS")
+        
+        # Validate duration
+        duration = kwargs.get("duration")
+        if duration is not None and duration < 0:
+            raise ValueError("Duration cannot be negative")
+        
+        # Validate access level
+        access_level = kwargs.get("access_level")
+        if access_level and access_level not in [level.value for level in AccessLevel]:
+            raise ValueError(f"Invalid access level. Must be one of: {[level.value for level in AccessLevel]}")
+        
+        # Validate status
+        status = kwargs.get("status")
+        if status and status not in [status.value for status in MeetingStatus]:
+            raise ValueError(f"Invalid status. Must be one of: {[status.value for status in MeetingStatus]}")
+        
+        super().__init__(**kwargs)
+
 class Tag(Base):
     __tablename__ = "tags"
 
@@ -100,4 +147,13 @@ class Tag(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    meetings = relationship("Meeting", secondary=meeting_tags, back_populates="tags") 
+    meetings = relationship("Meeting", secondary=meeting_tags, back_populates="tags")
+
+    def __init__(self, **kwargs):
+        # Validate label
+        if not kwargs.get("label"):
+            raise ValueError("Label is required")
+        if len(kwargs["label"].strip()) == 0:
+            raise ValueError("Label cannot be empty")
+        
+        super().__init__(**kwargs) 

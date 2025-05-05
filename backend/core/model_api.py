@@ -81,5 +81,21 @@ class ModelAPIClient:
         }
         return await self._make_request("POST", "/detect-speakers", json=data)
 
+    async def get_meeting_answer(
+        self,
+        meeting_id: int,
+        question: str
+    ) -> str:
+        """Get answer to a question about the meeting using local model API"""
+        if not question or not question.strip():
+            raise ValueError("Question cannot be empty")
+
+        data = {
+            "meeting_id": str(meeting_id),
+            "question": question
+        }
+        result = await self._make_request("POST", "/chat/answer", json=data)
+        return result["answer"]
+
 # Create global client instance
 model_api = ModelAPIClient() 

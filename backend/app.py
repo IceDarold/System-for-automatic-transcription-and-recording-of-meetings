@@ -6,6 +6,7 @@ from core.config import settings
 from api.v1 import api_router
 from api.meetings import router as meetings_router
 from api.studio import router as studio_router
+import os
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -22,13 +23,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Create storage directory if it doesn't exist
+if not os.path.exists("storage"):
+    os.makedirs("storage")
+
 # Mount storage directory for file access
 app.mount("/files", StaticFiles(directory="storage"), name="files")
 
 # Include routers
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(meetings_router, prefix=settings.API_V1_STR, tags=["meetings"])
-app.include_router(studio_router, prefix=settings.API_V1_STR, tags=["studio"])
+app.include_router(studio_router, prefix=f"{settings.API_V1_STR}/studio", tags=["studio"])
 
 
 @app.get("/")

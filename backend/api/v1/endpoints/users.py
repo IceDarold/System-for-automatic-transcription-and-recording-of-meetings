@@ -6,7 +6,8 @@ from datetime import datetime
 from database import get_db
 from models.user import User
 from schemas.user import UserResponse, UserUpdate, MeetingResponse, AuditLogResponse
-from core.security import get_current_user, get_password_hash
+from core.auth import get_current_user
+from core.security import get_password_hash
 
 router = APIRouter()
 
