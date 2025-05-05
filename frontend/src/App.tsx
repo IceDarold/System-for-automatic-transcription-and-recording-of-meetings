@@ -31,7 +31,7 @@ function App() {
               )
             }
           />
-          <Route path="/allMeetings" element={<MyProjectPage />} />
+          <Route path="/myMeetings" element={<MyProjectPage />} />
           <Route path="/login" element={<Login />} />
         </Route>
       </Routes>

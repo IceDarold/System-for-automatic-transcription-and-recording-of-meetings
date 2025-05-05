@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 function Sidebar() {
+  const navigate = useNavigate();
   const location = useLocation();
   useEffect(() => {
     const els = document.querySelectorAll(".sidebar-item");
@@ -19,6 +20,12 @@ function Sidebar() {
       el.setAttribute("data-status-sidebar-item", "active");
     }
   });
+
+  function handleClick(id: string, link: string) {
+    if (location.pathname !== link) {
+      navigate(link);
+    }
+  }
   return (
     <div className="sidebar">
       <div className="sidebar-logo">
@@ -26,13 +33,31 @@ function Sidebar() {
       </div>
 
       <div className="sidebar-block-items">
-        <div className="sidebar-item" id="sidebar-item-allMeetings">
+        <div
+          className="sidebar-item"
+          id="sidebar-item-allMeetings"
+          onClick={() => {
+            handleClick("sidebar-item-allMeetings", "/allMeetings");
+          }}
+        >
           1
         </div>
-        <div className="sidebar-item" id="sidebar-item-myMeetings">
+        <div
+          className="sidebar-item"
+          id="sidebar-item-myMeetings"
+          onClick={() => {
+            handleClick("sidebar-item-myMeetings", "/myMeetings");
+          }}
+        >
           2
         </div>
-        <div className="sidebar-item" id="sidebar-item-teams">
+        <div
+          className="sidebar-item"
+          id="sidebar-item-teams"
+          onClick={() => {
+            handleClick("sidebar-item-teams", "/teams");
+          }}
+        >
           3
         </div>
       </div>
@@ -46,7 +71,7 @@ interface PageProps {
 
 const Page: React.FC<PageProps> = ({ children }) => {
   return (
-    <div>
+    <div className="page">
       <Sidebar />
       <div className="mainContent">{children}</div>
     </div>
