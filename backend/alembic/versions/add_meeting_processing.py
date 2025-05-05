@@ -1,7 +1,7 @@
 """add meeting processing
 
 Revision ID: add_meeting_processing
-Revises: add_user_fio
+Revises: create_missing_tables
 Create Date: 2024-02-04 20:15:00.000000
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = 'add_meeting_processing'
-down_revision = 'add_user_fio'
+down_revision = 'create_missing_tables'
 branch_labels = None
 depends_on = None
 

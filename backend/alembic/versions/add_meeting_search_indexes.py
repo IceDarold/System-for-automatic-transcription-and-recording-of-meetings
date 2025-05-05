@@ -19,35 +19,25 @@ def upgrade() -> None:
     op.create_index('ix_meetings_title', 'meetings', ['title'])
     op.create_index('ix_meetings_date', 'meetings', ['date'])
     op.create_index('ix_meetings_created_at', 'meetings', ['created_at'])
-    op.create_index('ix_meetings_access_level', 'meetings', ['access_level'])
     op.create_index('ix_meetings_status', 'meetings', ['status'])
-    op.create_index('ix_meetings_created_by_id', 'meetings', ['created_by_id'])
+    op.create_index('ix_meetings_created_by', 'meetings', ['created_by'])
 
     # Add GIN index for full-text search on title and description
-    op.execute('CREATE INDEX ix_meetings_search ON meetings USING gin (to_tsvector(\'russian\', title || \' \' || COALESCE(short_description, \'\')))')
+    op.execute('CREATE INDEX ix_meetings_search ON meetings USING gin (to_tsvector(\'russian\', title || \' \' || COALESCE(description, \'\')))')
 
-    # Add indexes for many-to-many relationships
-    op.create_index('ix_meeting_participants_user_id', 'meeting_participants', ['user_id'])
-    op.create_index('ix_meeting_participants_meeting_id', 'meeting_participants', ['meeting_id'])
+    # Add indexes only for meeting_tags as the other tables don't exist yet
     op.create_index('ix_meeting_tags_tag_id', 'meeting_tags', ['tag_id'])
     op.create_index('ix_meeting_tags_meeting_id', 'meeting_tags', ['meeting_id'])
-    op.create_index('ix_meeting_access_user_id', 'meeting_access', ['user_id'])
-    op.create_index('ix_meeting_access_meeting_id', 'meeting_access', ['meeting_id'])
 
 def downgrade() -> None:
     # Drop indexes
     op.drop_index('ix_meetings_title')
     op.drop_index('ix_meetings_date')
     op.drop_index('ix_meetings_created_at')
-    op.drop_index('ix_meetings_access_level')
     op.drop_index('ix_meetings_status')
-    op.drop_index('ix_meetings_created_by_id')
+    op.drop_index('ix_meetings_created_by')
     op.drop_index('ix_meetings_search')
     
-    # Drop many-to-many relationship indexes
-    op.drop_index('ix_meeting_participants_user_id')
-    op.drop_index('ix_meeting_participants_meeting_id')
+    # Drop only meeting_tags indexes
     op.drop_index('ix_meeting_tags_tag_id')
-    op.drop_index('ix_meeting_tags_meeting_id')
-    op.drop_index('ix_meeting_access_user_id')
-    op.drop_index('ix_meeting_access_meeting_id') 
+    op.drop_index('ix_meeting_tags_meeting_id') 

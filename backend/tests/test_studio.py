@@ -49,7 +49,7 @@ def test_create_meeting_draft(editor_token):
         data={
             "title": "New Meeting",
             "date": datetime.now().isoformat(),
-            "short_description": "Test meeting"
+            "description": "Test meeting"
         }
     )
     assert response.status_code == 200

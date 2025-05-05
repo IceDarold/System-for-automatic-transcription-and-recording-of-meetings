@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String, DateTime, Enum, ForeignKey, Table, Text, Float
+from sqlalchemy import Boolean, Column, Integer, String, DateTime, Enum, ForeignKey, Table, Text, Float, Date, Time
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import enum
@@ -48,15 +48,20 @@ class Meeting(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
-    date = Column(DateTime(timezone=True), nullable=False)
-    short_description = Column(Text, nullable=True)
-    thumbnail_url = Column(String, nullable=True)
+    date = Column(Date, nullable=False)
+    description = Column(Text, nullable=True)
+    start_time = Column(Time, nullable=True)
+    end_time = Column(Time, nullable=True)
+    duration = Column(Integer, nullable=True)  # в секундах
+    location = Column(String, nullable=True)
+    is_online = Column(Boolean, default=False, nullable=False)
+    is_published = Column(Boolean, default=False, nullable=False)
     access_level = Column(Enum(AccessLevel), default=AccessLevel.private, nullable=False)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # New fields for processing status
+    # Fields for processing status
     status = Column(Enum(MeetingStatus), default=MeetingStatus.pending, nullable=False)
     processing_progress = Column(Integer, default=0)  # 0-100%
     error_message = Column(Text, nullable=True)
