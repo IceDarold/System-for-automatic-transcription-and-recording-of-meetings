@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from core.config import settings
-from api.v1.endpoints import auth
+from api.v1 import api_router
 from api.meetings import router as meetings_router
 from api.studio import router as studio_router
 
@@ -26,7 +26,7 @@ app.add_middleware(
 app.mount("/files", StaticFiles(directory="storage"), name="files")
 
 # Include routers
-app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
+app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(meetings_router, prefix=settings.API_V1_STR, tags=["meetings"])
 app.include_router(studio_router, prefix=settings.API_V1_STR, tags=["studio"])
 

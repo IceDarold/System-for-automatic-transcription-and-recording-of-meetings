@@ -1,4 +1,6 @@
+import React from "react";
 import Page from "./page";
+
 function MyProjectPage() {
   return (
     <Page>
