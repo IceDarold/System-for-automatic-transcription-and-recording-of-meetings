@@ -23,12 +23,13 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "meeting_system"
     SQLALCHEMY_DATABASE_URI: Optional[str] = None
+    DATABASE_URL: Optional[str] = None  # Adding this field to handle the environment variable
 
     # Model API settings
     MODEL_API_URL: str = "http://model-api:8000"  # Default for Docker
     MODEL_API_TIMEOUT: int = 300  # 5 minutes timeout for long-running tasks
 
-    @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
+    @field_validator("SQLALCHEMY_DATABASE_URI", "DATABASE_URL", mode="before")
     @classmethod
     def assemble_db_connection(cls, v: Optional[str], values: dict) -> str:
         if isinstance(v, str):

@@ -21,6 +21,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
+# Make scripts executable
+RUN chmod +x scripts/*.sh
+
 # Add current directory to PYTHONPATH
 ENV PYTHONPATH=/app
 
@@ -28,5 +31,5 @@ ENV PYTHONPATH=/app
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Start the application
-CMD ["bash", "scripts/init_db.sh"] 
+# Start the application using the entrypoint script
+CMD ["bash", "entrypoint.sh"]
