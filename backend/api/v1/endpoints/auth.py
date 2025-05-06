@@ -85,11 +85,6 @@ def login(
     """
     OAuth2 compatible token login, get an access token for future requests.
     """
-    # Debug logging
-    print("Login attempt with username:", form_data.username)
-    print("Request headers:", request.headers)
-    print("Request body:", request.body)
-    
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not security.verify_password(form_data.password, user.password_hash):
         raise HTTPException(

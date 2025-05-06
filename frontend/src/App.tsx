@@ -1,3 +1,4 @@
+import React from "react";
 import "./App.css";
 import {
   BrowserRouter as Router,
@@ -6,9 +7,9 @@ import {
   Navigate,
 } from "react-router-dom";
 import { useEffect, useState } from "react";
+
 import Login from "./page/loginPage";
 import MyProjectPage from "./page/myProjectPage";
-import DevMode from "./page/DevPage";
 
 function App() {
   const [access_token, setAccess_token] = useState<string | null>(
@@ -33,7 +34,6 @@ function App() {
           />
           <Route path="/myMeetings" element={<MyProjectPage />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/dev" element={<DevMode />} />
         </Route>
       </Routes>
     </Router>

@@ -4,6 +4,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [auth, setAuth] = React.useState("active-tabLogReg");
   const [reg, setReg] = React.useState("passive-tabLogReg");
+  const root = "http://127.0.0.1:8000";
   const loginEndpoint = "/api/v1/auth/login";
   const registerEndpoint = "/api/v1/auth/register";
   const clickOnAuth = () => {
@@ -45,45 +46,20 @@ export default function Login() {
     e.preventDefault();
     const form = e.currentTarget;
     const formData = new FormData(form);
-    let urlSend = "";
+    let urlSend = root;
     if (formType === "login") {
       urlSend += loginEndpoint;
     } else if (formType === "register") {
       urlSend += registerEndpoint;
     }
-    console.log(urlSend);
     try {
-      // Debug log to see what's being sent
-      console.log("Form type:", formType);
-      console.log("Form data:", Object.fromEntries(formData.entries()));
-      
-      let response;
-      
-      if (formType === "login") {
-        // For OAuth2 login, explicitly create the form data in the required format
-        const loginData = new URLSearchParams();
-        loginData.append("username", formData.get("username") as string);
-        loginData.append("password", formData.get("password") as string);
-        
-        console.log("Login data:", loginData.toString());
-        
-        response = await fetch(urlSend, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: loginData.toString(),
-        });
-      } else {
-        // For registration, use regular form data
-        response = await fetch(urlSend, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams(formData as any).toString(),
-        });
-      }
+      const response = await fetch(urlSend, {
+        method: "POST",
+        body: new URLSearchParams(formData as any).toString(), // преобразуем в x-www-form-urlencoded
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
 
       if (!response.ok) {
         console.log("Error place");
