@@ -57,7 +57,7 @@ def test_get_meeting_integration(db_session):
     app.dependency_overrides[get_db] = lambda: db_session
     response = client.get(
         f"/api/v1/meetings/{meeting.id}",
-        headers={"Authorization": f"Bearer {token}"}
+        headers={"Authorization": f"Bearer {token}  ч"}
     )
     app.dependency_overrides = {}
     assert response.status_code == status.HTTP_200_OK
