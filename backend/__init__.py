@@ -1,3 +1,0 @@
-"""
-Meeting Transcription System Backend
-""" 

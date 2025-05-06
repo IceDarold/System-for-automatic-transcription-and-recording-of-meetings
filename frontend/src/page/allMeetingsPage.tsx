@@ -1,8 +1,8 @@
 import Page from "./page";
 import Searcher from "../components/Searcher";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CardMyProject from "../components/CardMyProject";
-import { useEffect, useState } from "react";
 
 interface CardData {
   id: number;
@@ -11,25 +11,12 @@ interface CardData {
   badges: string[];
   speakers: string[];
   description: string;
-  status: string;
 }
 
-function formater(data: { items: any[] }): CardData[] {
-  return data.items.map((item) => ({
-    id: item.id,
-    main: item.title,
-    date: new Date(item.date).toLocaleDateString(), // формат даты по-человечески
-    badges: item.tags.map((tag: any) => tag.label),
-    speakers: item.participants.map((participant: any) => participant.name),
-    description: item.description,
-    status: item.is_ready ? "Опубликовано" : "В работе",
-  }));
-}
-
-const root = "http://127.0.0.1:8000";
-function MyProjectPage() {
-  const [CardDataLoad, setCardDataLoad] = useState<CardData[]>([]);
+export default function AllMeetingsPage() {
   const navigate = useNavigate();
+  const root = "http://127.0.0.1:8000";
+  const [CardDataLoad, setCardDataLoad] = useState<CardData[]>([]);
   async function fetchMeetings() {
     try {
       const response = await fetch(root + "/api/v1/meetings", {
@@ -54,19 +41,22 @@ function MyProjectPage() {
   useEffect(() => {
     fetchMeetings();
   });
+  function formater(data: { items: any[] }): CardData[] {
+    return data.items.map((item) => ({
+      id: item.id,
+      main: item.title,
+      date: new Date(item.date).toLocaleDateString(), // формат даты по-человечески
+      badges: item.tags.map((tag: any) => tag.label),
+      speakers: item.participants.map((participant: any) => participant.name),
+      description: item.description,
+      status: item.is_ready ? "Опубликовано" : "В работе",
+    }));
+  }
   return (
     <Page>
       <div className="Content">
         <div className="panelFilters">
           <Searcher />
-          <button
-            className="primaryButton"
-            onClick={() => {
-              navigate("/create");
-            }}
-          >
-            Создать проект
-          </button>
         </div>
         <div className="myProjectsContent">
           {CardDataLoad.map((item: CardData) => (
@@ -77,9 +67,8 @@ function MyProjectPage() {
               badges={item.badges}
               speakers={item.speakers}
               description={item.description}
-              status={item.status}
               onClick={() => {
-                navigate("/meetings/edit/" + item.id);
+                navigate("/meetings/" + item.id);
               }}
               hover="true"
               usekeyasid="false"
@@ -90,5 +79,3 @@ function MyProjectPage() {
     </Page>
   );
 }
-
-export default MyProjectPage;

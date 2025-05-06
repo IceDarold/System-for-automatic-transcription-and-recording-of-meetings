@@ -83,7 +83,9 @@ const Page: React.FC<PageProps> = ({ children }) => {
   return (
     <div className="page">
       <Sidebar />
-      <div className="mainContent">{children}</div>
+      <div className="mainContent" id="mainContent">
+        {children}
+      </div>
     </div>
   );
 };
