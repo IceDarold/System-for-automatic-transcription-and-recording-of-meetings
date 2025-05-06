@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Body, File, UploadFile
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import or_, and_, func
 from typing import List, Optional
@@ -136,16 +136,21 @@ async def get_meetings(
             id=meeting.id,
             title=meeting.title,
             date=meeting.date,
-            tags=[TagResponse(id=tag.id, label=tag.label) for tag in meeting.tags],
-            participants=[UserResponse(id=p.id, name=f"{p.first_name} {p.last_name}") for p in meeting.participants],
-            created_by=UserResponse(id=meeting.created_by.id, name=f"{meeting.created_by.first_name} {meeting.created_by.last_name}"),
             description=meeting.description,
             access_level=meeting.access_level,
             status=meeting.status,
+            created_by_id=meeting.created_by_id,
             processing_progress=meeting.processing_progress,
-            is_ready=meeting.is_ready,
             created_at=meeting.created_at,
-            updated_at=meeting.updated_at
+            updated_at=meeting.updated_at,
+            location=meeting.location,
+            start_time=meeting.start_time,
+            end_time=meeting.end_time,
+            duration=meeting.duration,
+            is_online=meeting.is_online,
+            is_published=meeting.is_published if hasattr(meeting, 'is_published') else False,
+            tags=[TagResponse(id=tag.id, label=tag.label) for tag in meeting.tags],
+            participants=[{"id": p.id, "name": f"{p.first_name} {p.last_name}"} for p in meeting.participants]
         )
         for meeting in meetings
     ]
@@ -256,27 +261,34 @@ async def get_meeting_detail(
         id=meeting.id,
         title=meeting.title,
         date=meeting.date,
-        tags=[TagResponse(id=tag.id, label=tag.label) for tag in meeting.tags],
-        participants=[UserResponse(id=p.id, name=f"{p.first_name} {p.last_name}") for p in meeting.participants],
-        created_by=UserResponse(id=meeting.created_by.id, name=f"{meeting.created_by.first_name} {meeting.created_by.last_name}"),
         description=meeting.description,
         access_level=meeting.access_level,
         status=meeting.status,
+        created_by_id=meeting.created_by_id,
         processing_progress=meeting.processing_progress,
-        is_ready=meeting.is_ready,
         created_at=meeting.created_at,
         updated_at=meeting.updated_at,
+        location=meeting.location,
+        start_time=meeting.start_time,
+        end_time=meeting.end_time,
+        duration=meeting.duration,
+        is_online=meeting.is_online,
+        is_published=meeting.is_published if hasattr(meeting, 'is_published') else False,
         audio_url=audio_url,
         transcript=transcript_blocks,
         summary=summary,
         protocol=protocol,
-        error_message=meeting.error_message
+        error_message=meeting.error_message,
+        tags=[TagResponse(id=tag.id, label=tag.label) for tag in meeting.tags],
+        participants=[{"id": p.id, "name": f"{p.first_name} {p.last_name}"} for p in meeting.participants],
+        transcript_blocks=transcript_blocks if transcript_blocks else [],
+        files=[FileResponse(**file.__dict__) for file in meeting.files] if hasattr(meeting, 'files') and meeting.files else []
     )
 
 @router.put("/meetings/{meeting_id}", response_model=MeetingResponse)
 async def update_meeting(
     meeting_id: int,
-    update_data: dict,
+    update_data: dict = Body(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -312,7 +324,26 @@ async def update_meeting(
         resource_type="meeting"
     )
 
-    return meeting
+    return MeetingResponse(
+        id=meeting.id,
+        title=meeting.title,
+        date=meeting.date,
+        description=meeting.description,
+        access_level=meeting.access_level,
+        status=meeting.status,
+        created_by_id=meeting.created_by_id,
+        processing_progress=meeting.processing_progress,
+        created_at=meeting.created_at,
+        updated_at=meeting.updated_at,
+        location=meeting.location,
+        start_time=meeting.start_time,
+        end_time=meeting.end_time,
+        duration=meeting.duration,
+        is_online=meeting.is_online,
+        is_published=meeting.is_published if hasattr(meeting, 'is_published') else False,
+        tags=[TagResponse(id=tag.id, label=tag.label) for tag in meeting.tags],
+        participants=[{"id": p.id, "name": f"{p.first_name} {p.last_name}"} for p in meeting.participants]
+    )
 
 @router.delete("/meetings/{meeting_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_meeting(
@@ -384,4 +415,100 @@ async def create_meeting(
         resource_type="meeting"
     )
 
-    return meeting 
+    return MeetingResponse(
+        id=meeting.id,
+        title=meeting.title,
+        date=meeting.date,
+        description=meeting.description,
+        access_level=meeting.access_level,
+        status=meeting.status,
+        created_by_id=meeting.created_by_id,
+        processing_progress=meeting.processing_progress,
+        created_at=meeting.created_at,
+        updated_at=meeting.updated_at,
+        location=meeting.location,
+        start_time=meeting.start_time,
+        end_time=meeting.end_time,
+        duration=meeting.duration,
+        is_online=meeting.is_online,
+        is_published=meeting.is_published if hasattr(meeting, 'is_published') else False,
+        tags=[TagResponse(id=tag.id, label=tag.label) for tag in meeting.tags],
+        participants=[{"id": p.id, "name": f"{p.first_name} {p.last_name}"} for p in meeting.participants]
+    )
+
+@router.post("/meetings/{meeting_id}/audio", status_code=status.HTTP_201_CREATED)
+async def upload_audio(
+    meeting_id: int,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Upload an audio file for a meeting"""
+    meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found"
+        )
+    
+    # Check if user has permission to update
+    if meeting.created_by_id != current_user.id and current_user.role != UserRole.superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to update this meeting"
+        )
+    
+    # Check file type
+    if not file.content_type.startswith('audio/'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only audio files are allowed"
+        )
+    
+    # Forward to the studio upload method
+    from api.studio import upload_meeting_file
+    return await upload_meeting_file(meeting_id, file, current_user, db)
+
+@router.post("/meetings/{meeting_id}/chat")
+async def chat_with_meeting(
+    meeting_id: int,
+    question: dict = Body(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Ask a question about a meeting"""
+    meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found"
+        )
+    
+    # Check access
+    has_access = (
+        meeting.access_level == AccessLevel.public or
+        (meeting.access_level == AccessLevel.restricted and current_user in meeting.access_users) or
+        (meeting.access_level == AccessLevel.private and (
+            meeting.created_by_id == current_user.id or
+            current_user.role == UserRole.superadmin
+        ))
+    )
+    
+    if not has_access:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this meeting"
+        )
+    
+    # Validate question
+    if not question.get("question") or len(question.get("question").strip()) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Question cannot be empty"
+        )
+    
+    # For now, just return a placeholder response
+    # In a real implementation, this would call an LLM API
+    return {
+        "answer": "This is a placeholder answer. In a real implementation, this would provide an answer based on the meeting content."
+    } 

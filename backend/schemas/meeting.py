@@ -22,6 +22,9 @@ class FileResponse(BaseModel):
     url: str
     created_at: datetime
 
+    class Config:
+        from_attributes = True
+
 class TranscriptBlockResponse(BaseModel):
     speaker: Optional[UserResponse]
     start: float
@@ -31,27 +34,56 @@ class TranscriptBlockResponse(BaseModel):
     language: str
     metadata: Optional[Dict[str, Any]] = None
 
-class MeetingResponse(BaseModel):
-    id: int
+class MeetingBase(BaseModel):
     title: str
     date: datetime
-    tags: List[TagResponse]
-    participants: List[UserResponse]
-    created_by: UserResponse
-    description: Optional[str]
-    access_level: AccessLevel
-    status: MeetingStatus
-    processing_progress: int = Field(ge=0, le=100)
-    is_ready: bool
-    created_at: Optional[datetime] = None
+    description: Optional[str] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    duration: Optional[int] = None
+    location: Optional[str] = None
+    is_online: bool = False
+    is_published: bool = False
+    access_level: AccessLevel = AccessLevel.private
+
+class MeetingCreate(MeetingBase):
+    pass
+
+class MeetingUpdate(MeetingBase):
+    pass
+
+class MeetingResponse(MeetingBase):
+    id: int
+    created_by_id: int
+    created_at: datetime
     updated_at: Optional[datetime] = None
+    status: MeetingStatus
+    processing_progress: int = 0
+    error_message: Optional[str] = None
+    audio_url: Optional[str] = None
+    transcript: Optional[List[Dict[str, Any]]] = []
+    summary: Optional[str] = None
+    protocol: Optional[str] = None
+    tags: List[TagResponse] = []
+    participants: List[Dict[str, Any]] = []
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+            time: lambda v: v.strftime("%H:%M:%S") if v else None
+        }
 
 class MeetingDetailResponse(MeetingResponse):
-    audio_url: Optional[str]
-    transcript: Optional[List[TranscriptBlockResponse]]
-    summary: Optional[str]
-    protocol: Optional[str]
-    error_message: Optional[str]
+    transcript_blocks: List[Dict[str, Any]] = []
+    files: List[FileResponse] = []
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+            time: lambda v: v.strftime("%H:%M:%S") if v else None
+        }
 
 class MeetingSearchParams(BaseModel):
     search: Optional[str] = None

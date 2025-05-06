@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     MODEL_API_URL: str = "http://model-api:8000"
     MODEL_API_TIMEOUT: int = 300
 
+    # Storage settings
+    STORAGE_DIR: str = "storage"
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def assemble_db_connection(cls, v: Optional[str], info) -> str:
