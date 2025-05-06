@@ -2,10 +2,15 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
 from core.config import settings
-from models.user import UserRole
+from models.user import UserRole, User
+from database import get_db
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -50,4 +55,35 @@ def verify_token(token: str) -> Optional[dict]:
                 payload["role"] = UserRole.USER
         return payload
     except JWTError:
-        return None 
+        return None
+
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    payload = verify_token(token)
+    if payload is None:
+        raise credentials_exception
+        
+    user_id: int = payload.get("sub")
+    if user_id is None:
+        raise credentials_exception
+        
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise credentials_exception
+        
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Inactive user"
+        )
+        
+    return user 

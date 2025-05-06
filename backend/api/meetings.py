@@ -8,7 +8,7 @@ from database import get_db
 from models.meeting import Meeting, AccessLevel, MeetingStatus, Tag
 from models.user import User, UserRole
 from models.transcript import TranscriptBlock
-from schemas.meeting import MeetingResponse, MeetingListResponse, MeetingDetailResponse, MeetingSearchParams, TranscriptBlockResponse, UserResponse
+from schemas.meeting import MeetingResponse, MeetingListResponse, MeetingDetailResponse, MeetingSearchParams, TranscriptBlockResponse, UserResponse, MeetingCreate, TagResponse
 from core.auth import get_current_user
 from core.audit import log_action
 
@@ -136,9 +136,9 @@ async def get_meetings(
             id=meeting.id,
             title=meeting.title,
             date=meeting.date,
-            tags=[{"id": tag.id, "label": tag.label} for tag in meeting.tags],
-            participants=[{"id": p.id, "name": f"{p.first_name} {p.last_name}"} for p in meeting.participants],
-            created_by={"id": meeting.created_by.id, "name": f"{meeting.created_by.first_name} {meeting.created_by.last_name}"},
+            tags=[TagResponse(id=tag.id, label=tag.label) for tag in meeting.tags],
+            participants=[UserResponse(id=p.id, name=f"{p.first_name} {p.last_name}") for p in meeting.participants],
+            created_by=UserResponse(id=meeting.created_by.id, name=f"{meeting.created_by.first_name} {meeting.created_by.last_name}"),
             description=meeting.description,
             access_level=meeting.access_level,
             status=meeting.status,
@@ -256,9 +256,9 @@ async def get_meeting_detail(
         id=meeting.id,
         title=meeting.title,
         date=meeting.date,
-        tags=[{"id": tag.id, "label": tag.label} for tag in meeting.tags],
-        participants=[{"id": p.id, "name": f"{p.first_name} {p.last_name}"} for p in meeting.participants],
-        created_by={"id": meeting.created_by.id, "name": f"{meeting.created_by.first_name} {meeting.created_by.last_name}"},
+        tags=[TagResponse(id=tag.id, label=tag.label) for tag in meeting.tags],
+        participants=[UserResponse(id=p.id, name=f"{p.first_name} {p.last_name}") for p in meeting.participants],
+        created_by=UserResponse(id=meeting.created_by.id, name=f"{meeting.created_by.first_name} {meeting.created_by.last_name}"),
         description=meeting.description,
         access_level=meeting.access_level,
         status=meeting.status,
@@ -271,4 +271,117 @@ async def get_meeting_detail(
         summary=summary,
         protocol=protocol,
         error_message=meeting.error_message
-    ) 
+    )
+
+@router.put("/meetings/{meeting_id}", response_model=MeetingResponse)
+async def update_meeting(
+    meeting_id: int,
+    update_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update a meeting"""
+    meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found"
+        )
+
+    # Check if user has permission to update
+    if meeting.created_by_id != current_user.id and current_user.role != UserRole.superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to update this meeting"
+        )
+
+    # Update meeting fields
+    for field, value in update_data.items():
+        if hasattr(meeting, field):
+            setattr(meeting, field, value)
+
+    db.commit()
+    db.refresh(meeting)
+
+    # Log the update action
+    await log_action(
+        db=db,
+        user_id=current_user.id,
+        action="update_meeting",
+        resource_id=meeting_id,
+        resource_type="meeting"
+    )
+
+    return meeting
+
+@router.delete("/meetings/{meeting_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_meeting(
+    meeting_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a meeting"""
+    meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found"
+        )
+
+    # Check if user has permission to delete
+    if meeting.created_by_id != current_user.id and current_user.role != UserRole.superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to delete this meeting"
+        )
+
+    # Delete meeting
+    db.delete(meeting)
+    db.commit()
+
+    # Log the delete action
+    await log_action(
+        db=db,
+        user_id=current_user.id,
+        action="delete_meeting",
+        resource_id=meeting_id,
+        resource_type="meeting"
+    )
+
+    return None
+
+@router.post("/meetings", response_model=MeetingResponse)
+async def create_meeting(
+    meeting_data: MeetingCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new meeting"""
+    # Create meeting
+    meeting = Meeting(
+        title=meeting_data.title,
+        date=meeting_data.date,
+        start_time=meeting_data.start_time,
+        end_time=meeting_data.end_time,
+        duration=meeting_data.duration,
+        location=meeting_data.location,
+        is_online=meeting_data.is_online,
+        description=meeting_data.description,
+        access_level=meeting_data.access_level,
+        status=MeetingStatus.pending,
+        created_by_id=current_user.id
+    )
+    db.add(meeting)
+    db.commit()
+    db.refresh(meeting)
+
+    # Log the create action
+    await log_action(
+        db=db,
+        user_id=current_user.id,
+        action="create_meeting",
+        resource_id=meeting.id,
+        resource_type="meeting"
+    )
+
+    return meeting 

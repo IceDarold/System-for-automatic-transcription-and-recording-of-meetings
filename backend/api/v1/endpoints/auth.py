@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from core import security
 from core.config import settings
-from core.deps import get_current_user, get_current_active_user
+from core.auth import get_current_user, get_current_active_user
 from database import get_db
 from models.user import User, UserRole
 from models.audit_log import AuditLog, AuditAction
@@ -85,6 +85,11 @@ def login(
     """
     OAuth2 compatible token login, get an access token for future requests.
     """
+    # Debug logging
+    print("Login attempt with username:", form_data.username)
+    print("Request headers:", request.headers)
+    print("Request body:", request.body)
+    
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not security.verify_password(form_data.password, user.password_hash):
         raise HTTPException(

@@ -2,11 +2,13 @@ from sqlalchemy import Boolean, Column, Integer, String, DateTime, Enum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import enum
+import re
 from database import Base
 
 
 class UserRole(str, enum.Enum):
     user = "user"
+    editor = "editor"
     superadmin = "superadmin"
 
     def __str__(self) -> str:
@@ -35,3 +37,18 @@ class User(Base):
     participated_meetings = relationship("Meeting", secondary="meeting_participants", back_populates="participants")
     accessible_meetings = relationship("Meeting", secondary="meeting_access", back_populates="access_users")
     transcript_blocks = relationship("TranscriptBlock", back_populates="speaker")
+
+    def __init__(self, **kwargs):
+        # Validate email
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", kwargs.get("email", "")):
+            raise ValueError("Invalid email format")
+        
+        # Validate required fields
+        if not kwargs.get("first_name"):
+            raise ValueError("First name is required")
+        if not kwargs.get("last_name"):
+            raise ValueError("Last name is required")
+        if not kwargs.get("password_hash"):
+            raise ValueError("Password hash is required")
+        
+        super().__init__(**kwargs)

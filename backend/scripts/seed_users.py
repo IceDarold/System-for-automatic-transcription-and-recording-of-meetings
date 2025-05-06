@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List
-import hashlib
 
 from database import SessionLocal
 from models.user import User, UserRole
+from core.security import get_password_hash
 
 def create_mock_users(db: Session) -> List[User]:
     # Создаем тестовых пользователей
@@ -13,7 +13,7 @@ def create_mock_users(db: Session) -> List[User]:
             email="admin@example.com",
             first_name="Admin",
             last_name="User",
-            password_hash=hashlib.sha256("admin123".encode()).hexdigest(),
+            password_hash=get_password_hash("admin123"),
             role=UserRole.superadmin
         ),
         User(
@@ -21,28 +21,28 @@ def create_mock_users(db: Session) -> List[User]:
             first_name="Иван",
             last_name="Иванов",
             middle_name="Иванович",
-            password_hash=hashlib.sha256("user123".encode()).hexdigest(),
+            password_hash=get_password_hash("user123"),
             role=UserRole.user
         ),
         User(
             email="maria@example.com",
             first_name="Мария",
             last_name="Петрова",
-            password_hash=hashlib.sha256("user123".encode()).hexdigest(),
+            password_hash=get_password_hash("user123"),
             role=UserRole.user
         ),
         User(
             email="alex@example.com",
             first_name="Алексей",
             last_name="Сидоров",
-            password_hash=hashlib.sha256("user123".encode()).hexdigest(),
+            password_hash=get_password_hash("user123"),
             role=UserRole.user
         ),
         User(
             email="anna@example.com",
             first_name="Анна",
             last_name="Козлова",
-            password_hash=hashlib.sha256("user123".encode()).hexdigest(),
+            password_hash=get_password_hash("user123"),
             role=UserRole.user
         )
     ]

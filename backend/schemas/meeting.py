@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, time
 from models.meeting import MeetingStatus, AccessLevel
 from models.file import FileType
 
@@ -43,8 +43,8 @@ class MeetingResponse(BaseModel):
     status: MeetingStatus
     processing_progress: int = Field(ge=0, le=100)
     is_ready: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 class MeetingDetailResponse(MeetingResponse):
     audio_url: Optional[str]
@@ -71,4 +71,15 @@ class MeetingListResponse(BaseModel):
     items: List[MeetingResponse]
     has_more: bool
     total: int
-    filters: Optional[Dict[str, Any]] = None 
+    filters: Optional[Dict[str, Any]] = None
+
+class MeetingCreate(BaseModel):
+    title: str
+    date: datetime
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    duration: Optional[int] = None  # in seconds
+    location: Optional[str] = None
+    is_online: bool = False
+    description: Optional[str] = None
+    access_level: AccessLevel = AccessLevel.private 
