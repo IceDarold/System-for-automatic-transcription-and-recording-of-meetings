@@ -12,6 +12,7 @@ RUN echo "deb http://mirror.yandex.ru/debian/ bullseye main" > /etc/apt/sources.
         gcc \
         postgresql-client \
         curl \
+        ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching

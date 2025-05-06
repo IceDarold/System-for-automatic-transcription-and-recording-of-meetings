@@ -4,8 +4,9 @@ from datetime import datetime
 from backend.app import app
 from fastapi.testclient import TestClient
 from database import get_db
-from models import Meeting
+from models import Meeting, User
 from .conftest import create_user_and_token
+from utils.auth import create_access_token
 
 client = TestClient(app)
 
@@ -33,12 +34,13 @@ def test_create_meeting_integration(db_session):
     print(f"[DEBUG] user.id={user.id}, token={token}")
     meeting_data = {
         "title": "Integration Meeting",
-        "date": datetime.now().date().isoformat(),
+        "date": datetime.now().isoformat(),
         "start_time": "10:00:00",
         "end_time": "11:00:00",
         "location": "Integration Room",
         "is_online": False,
-        "access_level": "public"
+        "access_level": "public",
+        "description": "Test meeting description"
     }
     app.dependency_overrides[get_db] = lambda: db_session
     response = client.post(
@@ -91,7 +93,20 @@ def test_delete_meeting_integration(db_session):
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
 def test_upload_audio_integration(db_session):
-    user, token = create_user_and_token(db_session)
+    # Create an editor user instead of a regular user
+    user = User(
+        email="editor@example.com",
+        password_hash="hashed_password",
+        first_name="Editor",
+        last_name="User",
+        is_active=True,
+        role="editor"
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    token = create_access_token({"sub": str(user.id)})
+    
     meeting = create_meeting(db_session, user)
     app.dependency_overrides[get_db] = lambda: db_session
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
@@ -99,12 +114,16 @@ def test_upload_audio_integration(db_session):
         f.flush()
         f.seek(0)
         response = client.post(
-            f"/api/v1/meetings/{meeting.id}/audio",
+            f"/api/v1/studio/meetings/{meeting.id}/upload-file",
             files={"file": ("test.wav", open(f.name, "rb"), "audio/wav")},
             headers={"Authorization": f"Bearer {token}"}
         )
     app.dependency_overrides = {}
-    assert response.status_code in (status.HTTP_200_OK, status.HTTP_201_CREATED, status.HTTP_202_ACCEPTED, status.HTTP_204_NO_CONTENT, 404)
+    assert response.status_code in (status.HTTP_200_OK, status.HTTP_201_CREATED)
+    data = response.json()
+    assert "id" in data
+    assert "url" in data
+    assert data["url"].endswith(".wav")
 
 def test_get_meeting_transcript_integration(db_session):
     user, token = create_user_and_token(db_session)
@@ -168,7 +187,8 @@ def test_meeting_search_integration(db_session):
     meeting = create_meeting(db_session, user)
     app.dependency_overrides[get_db] = lambda: db_session
     response = client.get(
-        f"/api/v1/meetings/search?query={meeting.title}",
+        "/api/v1/meetings",
+        params={"search": meeting.title},
         headers={"Authorization": f"Bearer {token}"}
     )
     app.dependency_overrides = {}
