@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.INFO)
 
 POSTGRES_TEST_DATABASE_URL = settings.DATABASE_URL
 
-logger.info(f"DEBUG (conftest): APP_ENV='{os.environ.get("APP_ENV")}'")
+logger.info(f"DEBUG (conftest): APP_ENV='{os.environ.get('APP_ENV')}'")
 logger.info(f"DEBUG (conftest): settings.POSTGRES_USER='{settings.POSTGRES_USER}'")
 logger.info(f"DEBUG (conftest): settings.DATABASE_URL being used: '{settings.DATABASE_URL}'")
 logger.info(f"DEBUG (conftest): POSTGRES_TEST_DATABASE_URL for db_engine: '{POSTGRES_TEST_DATABASE_URL}'")

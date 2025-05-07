@@ -1,0 +1,80 @@
+name: Deploy to Production Server
+
+on:
+  push:
+    branches:
+      - site-prod  # Триггер на пуш в эту ветку
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4 # Используем последнюю версию
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0 # Используем webfactory/ssh-agent для загрузки SSH ключа
+        with:
+          ssh-private-key: ${{ secrets.VPS_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+      
+      - name: Deploy to Server and Run Migrations
+        env:
+          # Переменные окружения, которые будут доступны в SSH сессии для скрипта
+          SERVER_USER_HOST: "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          SERVER_PORT: "${{ secrets.VPS_PORT }}"
+          PROJECT_PATH_ON_SERVER: "/opt/System-for-automatic-transcription-and-recording-of-meetings" # TODO: ЗАМЕНИ НА СВОЙ ПУТЬ!
+          ENV_FILE_CONTENT_PROD: "${{ secrets.ENV_FILE_PROD }}"
+          BACKEND_CONTAINER: "${{ secrets.BACKEND_CONTAINER_NAME }}"
+        run: |
+          echo "Starting deployment to production server..."
+          ssh -p "$SERVER_PORT" "$SERVER_USER_HOST" << 'EOF'
+            set -e # Exit immediately if a command exits with a non-zero status.
+            
+            echo "Navigating to project directory: $PROJECT_PATH_ON_SERVER"
+            cd "$PROJECT_PATH_ON_SERVER"
+            
+            echo "Pulling latest changes from site-prod branch..."
+            git fetch origin site-prod
+            git reset --hard origin/site-prod 
+            # Alternative: git checkout site-prod && git pull origin site-prod
+            
+            echo "Creating/Updating .env file..."
+            echo "$ENV_FILE_CONTENT_PROD" > .env
+            
+            echo "Stopping and removing old containers (if any)..."
+            docker-compose -f docker-compose.yml down || echo "Docker compose down failed, proceeding anyway (maybe first deploy)"
+            
+            echo "Building and starting services with Docker Compose..."
+            # Используй --no-cache, если хочешь всегда пересобирать образы с нуля на сервере
+            # docker-compose -f docker-compose.yml build --no-cache backend frontend 
+            docker-compose -f docker-compose.yml build backend frontend 
+            docker-compose -f docker-compose.yml up -d
+            
+            echo "Waiting for services to start (especially backend)..."
+            sleep 15 # Даем время контейнерам запуститься перед миграциями
+            
+            echo "Running database migrations..."
+            # Убедись, что $BACKEND_CONTAINER - это правильное имя/ID контейнера бэкенда
+            if [ -n "$BACKEND_CONTAINER" ]; then
+              docker exec "$BACKEND_CONTAINER" alembic upgrade head
+              echo "Database migrations attempted."
+            else
+              echo "BACKEND_CONTAINER_NAME secret is not set. Skipping migrations."
+              echo "Please set it in GitHub secrets if you want to run migrations automatically."
+            fi
+            
+            echo "Cleaning up unused Docker images and volumes (optional)..."
+            # docker image prune -af
+            # docker volume prune -f
+            
+            echo "Deployment to production server finished successfully!"
+          EOF
+          echo "Deployment script execution finished." 
