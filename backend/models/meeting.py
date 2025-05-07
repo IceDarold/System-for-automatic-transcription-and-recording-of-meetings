@@ -137,6 +137,8 @@ class Meeting(Base):
         if status and status not in [status.value for status in MeetingStatus]:
             raise ValueError(f"Invalid status. Must be one of: {[status.value for status in MeetingStatus]}")
         
+        # TODO: Add validation to ensure end_time is not before start_time if both are provided.
+
         super().__init__(**kwargs)
 
 class Tag(Base):

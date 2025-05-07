@@ -52,7 +52,7 @@ def verify_token(token: str) -> Optional[dict]:
                 payload["role"] = UserRole(payload["role"].lower())
             except ValueError:
                 # If the role is not valid, set it to USER
-                payload["role"] = UserRole.USER
+                payload["role"] = UserRole.user
         return payload
     except JWTError:
         return None

@@ -117,24 +117,7 @@ def test_register_empty_name(client):
     assert response_first_name.status_code == status.HTTP_400_BAD_REQUEST
     data_first_name = response_first_name.json()
     assert "detail" in data_first_name
-
-    # Ожидаемая ошибка Pydantic для отсутствующего поля
-    expected_error_detail = {
-        # 'input': None, # input может отличаться или отсутствовать в некоторых версиях
-        'loc': ['body', 'first_name'],
-        'msg': 'Field required',
-        'type': 'missing'
-    }
-    
-    # Проверяем, что такой словарь (или его части) есть в списке ошибок
-    found_error = False
-    for error in data_first_name["detail"]:
-        if (error.get('loc') == expected_error_detail['loc'] and
-            error.get('msg') == expected_error_detail['msg'] and
-            error.get('type') == expected_error_detail['type']):
-            found_error = True
-            break
-    assert found_error, f"Expected Pydantic missing field error for first_name, got: {data_first_name['detail']}"
+    assert data_first_name["detail"] == "First name cannot be empty."
 
     response_last_name = client.post(
         "/api/v1/auth/register",
@@ -151,23 +134,7 @@ def test_register_empty_name(client):
     assert response_last_name.status_code == status.HTTP_400_BAD_REQUEST
     data_last_name = response_last_name.json()
     assert "detail" in data_last_name
-    # assert "Last name cannot be empty" in data_last_name["detail"] # Старая проверка
-
-    # Ожидаемая ошибка Pydantic для отсутствующего поля last_name
-    expected_error_detail_lastname = {
-        'loc': ['body', 'last_name'],
-        'msg': 'Field required',
-        'type': 'missing'
-    }
-    
-    found_error_lastname = False
-    for error in data_last_name["detail"]:
-        if (error.get('loc') == expected_error_detail_lastname['loc'] and
-            error.get('msg') == expected_error_detail_lastname['msg'] and
-            error.get('type') == expected_error_detail_lastname['type']):
-            found_error_lastname = True
-            break
-    assert found_error_lastname, f"Expected Pydantic missing field error for last_name, got: {data_last_name['detail']}"
+    assert data_last_name["detail"] == "Last name cannot be empty."
 
 def test_login_success(client, user_factory):
     """Тест успешного входа в систему"""

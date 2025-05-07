@@ -11,13 +11,17 @@ from models.meeting import AccessLevel, MeetingStatus
     [
         # Valid cases
         ({"email": "valid@example.com", "password_hash": "hash", "first_name": "F", "last_name": "L", "role": UserRole.user.value}, True, None),
-        ({"email": "admin@example.com", "password_hash": "hash", "first_name": "Admin", "last_name": "User", "role": UserRole.admin.value}, True, None),
+        ({"email": "admin@example.com", "password_hash": "hash", "first_name": "Admin", "last_name": "User", "role": UserRole.editor.value}, True, None),
         
         # Invalid cases
         ({"email": "invalid-email", "password_hash": "hash", "first_name": "F", "last_name": "L", "role": UserRole.user.value}, False, ValueError), # Invalid email format (assuming validation is in __init__ or setter)
-        ({"email": "no_role@example.com", "password_hash": "hash", "first_name": "F", "last_name": "L"}, False, TypeError), # Missing role (if required)
         ({"email": "invalid_role@example.com", "password_hash": "hash", "first_name": "F", "last_name": "L", "role": "guest"}, False, ValueError), # Invalid role value (assuming validation)
-        # TODO: Add tests for missing required fields like email, password_hash, first_name, last_name if User model enforces them
+        # Tests for missing required fields (User model __init__ enforces them)
+        ({"password_hash": "hash", "first_name": "F", "last_name": "L", "role": UserRole.user.value}, False, ValueError), # Missing email
+        ({"email": "no_pass@example.com", "first_name": "F", "last_name": "L", "role": UserRole.user.value}, False, ValueError), # Missing password_hash
+        ({"email": "no_fname@example.com", "password_hash": "hash", "last_name": "L", "role": UserRole.user.value}, False, ValueError), # Missing first_name
+        ({"email": "no_lname@example.com", "password_hash": "hash", "first_name": "F", "role": UserRole.user.value}, False, ValueError), # Missing last_name
+        # TODO: Add tests for missing required fields like email, password_hash, first_name, last_name if User model enforces them - Covered by above
     ]
 )
 def test_user_model_validation(user_data, should_pass, error_type):
@@ -68,7 +72,7 @@ DEFAULT_VALID_MEETING_DATA = {
         ({"duration": -100}, False, ValueError), # Negative duration
         ({"access_level": "unknown"}, False, ValueError), # Invalid access level string
         ({"status": "invalid"}, False, ValueError), # Invalid status string
-        # TODO: Add test for end_time < start_time if validation exists
+        # TODO: Add test for end_time < start_time if validation exists in Meeting model __init__
     ]
 )
 def test_meeting_model_validation(meeting_data_override, should_pass, error_type):

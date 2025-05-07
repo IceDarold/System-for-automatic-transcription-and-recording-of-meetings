@@ -96,7 +96,7 @@ async def test_detect_speakers_success(mock_audio_file_path):
         
         args, kwargs = mock_make_request.call_args
         assert kwargs.get("method") == "POST"
-        assert kwargs.get("endpoint") == "/diarize" # Assuming this is the correct endpoint
+        assert kwargs.get("endpoint") == "/diarize" # TODO: Verify model-api endpoint for diarization
         assert kwargs.get("json_data") == {"transcript": test_transcript}
         assert "files" in kwargs # Check that files argument was passed (for audio)
         # Example of a more specific check on the file part if the key is known, e.g., 'audio_file':
@@ -123,7 +123,7 @@ async def test_protocol_generator_service_success(): # Renamed for clarity
         assert result == expected_service_result
         mock_make_request.assert_called_once_with(
             method="POST",
-            endpoint="/generate_protocol", # Assuming this is the correct endpoint
+            endpoint="/generate_protocol", # TODO: Verify model-api endpoint for protocol generation
             json_data={"transcript": test_transcript, "summary": test_summary},
             timeout=settings.MODEL_API_TIMEOUT
         )
@@ -141,6 +141,7 @@ async def test_protocol_generator_service_success(): # Renamed for clarity
 )
 async def test_meeting_chatbot_service_success_parametrized(test_meeting, test_question, mock_api_response, expected_service_result):
     """Test meeting chatbot service with various questions and responses."""
+    # TODO: Ensure ModelAPIClient.get_meeting_answer handles varied API response structures (e.g., 'answer' vs 'answer_text')
     # Ensure your model_api.get_meeting_answer is robust enough if mock_api_response structure varies
     # For the last case, it assumes get_meeting_answer tries to find "answer" or "answer_text"
     if "answer_text" in mock_api_response and "answer" not in mock_api_response:
@@ -157,7 +158,7 @@ async def test_meeting_chatbot_service_success_parametrized(test_meeting, test_q
         assert result == expected_service_result
         mock_make_request.assert_called_once_with(
             method="POST",
-            endpoint=f"/chat/{test_meeting.id}", 
+            endpoint=f"/chat/{test_meeting.id}", # TODO: Verify model-api endpoint for chat
             json_data={"question": test_question},
             timeout=settings.MODEL_API_TIMEOUT
         )
@@ -205,7 +206,7 @@ async def test_save_file_success(mocker, mock_upload_file: UploadFile, mock_db_s
 
     # Mock dependencies in core.storage
     mocker.patch("core.storage.settings.STORAGE_DIR", mock_storage_dir)
-    mocker.patch("core.storage.ALLOWED_MIME_TYPES", mock_allowed_mime_types_dict)
+    mocker.patch("core.storage.settings.ALLOWED_UPLOAD_PREFIXES", ["audio/"]) # Mock for ALLOWED_UPLOAD_PREFIXES
     # Mock uuid.uuid4() to return an object that can be str() and has .hex if used (save_file uses str() directly)
     mock_uuid_obj = Mock()
     mock_uuid_obj.__str__ = lambda: fixed_uuid_value
@@ -264,7 +265,7 @@ async def test_save_file_unsupported_mime_type(mocker, mock_upload_file: UploadF
     mock_upload_file.content_type = "application/octet-stream" # This is not in the allowed list
 
     mocker.patch("core.storage.settings.STORAGE_DIR", mock_storage_dir)
-    mocker.patch("core.storage.ALLOWED_MIME_TYPES", mock_allowed_mime_types_dict)
+    mocker.patch("core.storage.settings.ALLOWED_UPLOAD_PREFIXES", ["audio/"]) # Correct mock for the test
     mock_os_makedirs = mocker.patch("core.storage.os.makedirs")
     mock_open_func = mocker.patch("builtins.open")
 
@@ -292,7 +293,7 @@ async def test_save_file_directory_creation_os_error(mocker, mock_upload_file: U
     original_filename, original_ext = os.path.splitext(mock_upload_file.filename)
 
     mocker.patch("core.storage.settings.STORAGE_DIR", mock_storage_dir)
-    mocker.patch("core.storage.ALLOWED_MIME_TYPES", mock_allowed_mime_types_dict)
+    mocker.patch("core.storage.settings.ALLOWED_UPLOAD_PREFIXES", ["audio/"]) # Correct mock for the test
     mock_uuid_obj = Mock()
     mock_uuid_obj.__str__ = lambda: "fixed-uuid"
     mocker.patch("core.storage.uuid.uuid4", return_value=mock_uuid_obj)
@@ -324,7 +325,7 @@ async def test_save_file_read_error(mocker, mock_upload_file: UploadFile, mock_d
     original_filename, original_ext = os.path.splitext(mock_upload_file.filename)
 
     mocker.patch("core.storage.settings.STORAGE_DIR", mock_storage_dir)
-    mocker.patch("core.storage.ALLOWED_MIME_TYPES", mock_allowed_mime_types_dict)
+    mocker.patch("core.storage.settings.ALLOWED_UPLOAD_PREFIXES", ["audio/"]) # Correct mock for the test
     mock_uuid_obj = Mock()
     mock_uuid_obj.__str__ = lambda: "fixed-uuid"
     mocker.patch("core.storage.uuid.uuid4", return_value=mock_uuid_obj)
@@ -366,7 +367,7 @@ async def test_save_file_write_error(mocker, mock_upload_file: UploadFile, mock_
     original_filename, original_ext = os.path.splitext(mock_upload_file.filename)
 
     mocker.patch("core.storage.settings.STORAGE_DIR", mock_storage_dir)
-    mocker.patch("core.storage.ALLOWED_MIME_TYPES", mock_allowed_mime_types_dict)
+    mocker.patch("core.storage.settings.ALLOWED_UPLOAD_PREFIXES", ["audio/"]) # Correct mock for the test
     mock_uuid_obj = Mock()
     mock_uuid_obj.__str__ = lambda: "fixed-uuid"
     mocker.patch("core.storage.uuid.uuid4", return_value=mock_uuid_obj)
@@ -414,7 +415,7 @@ async def test_save_file_db_commit_error_no_cleanup(mocker, mock_upload_file: Up
     original_filename, original_ext = os.path.splitext(mock_upload_file.filename)
 
     mocker.patch("core.storage.settings.STORAGE_DIR", mock_storage_dir)
-    mocker.patch("core.storage.ALLOWED_MIME_TYPES", mock_allowed_mime_types_dict)
+    mocker.patch("core.storage.settings.ALLOWED_UPLOAD_PREFIXES", ["audio/"]) # Correct mock for the test
     mock_uuid_obj = Mock()
     mock_uuid_obj.__str__ = lambda: fixed_uuid_value
     mocker.patch("core.storage.uuid.uuid4", return_value=mock_uuid_obj)

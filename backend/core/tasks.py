@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 from models.meeting import Meeting, MeetingStatus
-from models.file import FileType
+from models.file import FileType, File as FileModel
 from models.transcript import TranscriptBlock
-from core.storage import STORAGE_DIR
+from core.storage import save_text_content_as_file
 from core.model_api import model_api, ModelAPIError
+from database import SessionLocal
 import os
 import json
 from datetime import datetime
@@ -18,10 +19,12 @@ async def process_meeting(meeting_id: int):
     transcript, summary, and protocol.
     """
     # Get meeting from database
-    db = Session()  # Create new session for background task
+    db: Session = SessionLocal()
     meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
     
     if not meeting or not meeting.audio_file:
+        if meeting:
+            db.close()
         return
     
     try:
@@ -67,21 +70,35 @@ async def process_meeting(meeting_id: int):
         db.commit()
         
         # Step 3: Generate summary
-        summary = await model_api.generate_summary(
+        summary_text = await model_api.generate_summary(
             transcript=transcript_data,
             language="ru"
         )
-        meeting.summary = summary
+        summary_file_model = await save_text_content_as_file(
+            db=db, 
+            content=summary_text, 
+            original_filename_base=f"meeting_{meeting_id}_summary",
+            meeting_id=meeting_id, 
+            file_type=FileType.summary
+        )
+        meeting.summary_file_id = summary_file_model.id
         meeting.processing_progress = 80
         db.commit()
         
         # Step 4: Generate protocol
-        protocol = await model_api.generate_protocol(
+        protocol_text = await model_api.generate_protocol(
             transcript=transcript_data,
-            summary=summary,
+            summary=summary_text,
             language="ru"
         )
-        meeting.protocol = protocol
+        protocol_file_model = await save_text_content_as_file(
+            db=db, 
+            content=protocol_text, 
+            original_filename_base=f"meeting_{meeting_id}_protocol",
+            meeting_id=meeting_id, 
+            file_type=FileType.protocol
+        )
+        meeting.protocol_file_id = protocol_file_model.id
         
         # Update final status
         meeting.status = MeetingStatus.done
@@ -105,7 +122,7 @@ async def process_meeting(meeting_id: int):
 
 async def update_processing_status(meeting_id: int, status: str, progress: int):
     """Update meeting processing status"""
-    db = Session()
+    db: Session = SessionLocal()
     try:
         meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
         if meeting:

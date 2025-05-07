@@ -82,6 +82,8 @@ class Settings(BaseSettings):
     ]
     MAX_AUDIO_FILE_SIZE_MB: int = 500  # Max size in Megabytes
 
+    ALLOWED_UPLOAD_PREFIXES: List[str] = ["audio/", "video/"] # For general upload validation by prefix
+
     @field_validator('SECRET_KEY')
     def check_secret_key_production(cls, v, info):
         if info.data.get('APP_ENV') == 'production' and v == "default_unsafe_secret":

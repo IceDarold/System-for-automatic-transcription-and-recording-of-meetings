@@ -67,4 +67,9 @@ class User(Base):
         if not kwargs.get("password_hash"):
             raise ValueError("Password hash is required")
         
+        # Валидация роли
+        role_value = kwargs.get("role")
+        if role_value and role_value not in [r.value for r in UserRole]:
+            raise ValueError(f"Invalid role: '{role_value}'. Must be one of {[r.value for r in UserRole]}")
+        
         super().__init__(**kwargs)
