@@ -89,12 +89,12 @@ def test_create_meeting_integration(client, user_factory, auth_headers_factory, 
         (UserRole.user.value, False, AccessLevel.private.value, False, status.HTTP_403_FORBIDDEN),
         
         # Admin access (should bypass most restrictions)
-        (UserRole.admin.value, False, AccessLevel.private.value, False, status.HTTP_200_OK),
-        (UserRole.admin.value, False, AccessLevel.restricted.value, False, status.HTTP_200_OK), # Admin can access even if not explicitly listed
+        (UserRole.superadmin.value, False, AccessLevel.private.value, False, status.HTTP_200_OK),
+        (UserRole.superadmin.value, False, AccessLevel.restricted.value, False, status.HTTP_200_OK), # Admin can access even if not explicitly listed
     ]
 )
 def test_get_meeting_integration(
-    client, user_factory, auth_headers_factory, meeting_factory, 
+    client, user_factory, auth_headers_factory, meeting_factory, db_session,
     actor_role, setup_meeting_owner_is_actor, meeting_access_level, add_actor_to_restricted_access, expected_status
 ):
     owner_email = "owner_for_get@example.com"
@@ -116,15 +116,11 @@ def test_get_meeting_integration(
     )
 
     if meeting_access_level == AccessLevel.restricted.value and add_actor_to_restricted_access and actor.id != meeting_owner.id:
-        # Manually add actor to the meeting's access list (this assumes your model/logic supports it)
-        # This part needs actual DB operation, so it's tricky without a direct db_session here.
-        # For now, this highlights the need. A helper in conftest or direct db_session might be needed.
-        # Or, the meeting_factory could be extended to handle initial participants/access_users.
-        # For a simplified test, we might assume an endpoint exists to grant access, or test without this specific scenario initially.
-        # Let's assume for now the test relies on admin override or public/private distinction primarily.
-        # If `meeting_factory` can take `access_users` list, that would be ideal.
-        # print(f"Note: Scenario to add user {actor.id} to restricted meeting {created_meeting.id} access list needs implementation.")
-        pass # Placeholder for logic to add actor to restricted meeting access list
+        # Добавляем actor в список доступа для restricted встречи
+        created_meeting.access_users.append(actor)
+        db_session.commit()
+        db_session.refresh(created_meeting) # Обновляем объект встречи из БД
+        print(f"DEBUG: Added user {actor.id} to meeting {created_meeting.id}. Access users: {[u.id for u in created_meeting.access_users]}")
 
     response = client.get(f"/api/v1/meetings/{created_meeting.id}", headers=headers)
 
@@ -152,8 +148,8 @@ def test_get_meeting_integration(
         # TODO: Add case for non-owner with explicit access to a restricted meeting if update is allowed by business logic
 
         # Admin updates any meeting
-        (UserRole.admin.value, False, AccessLevel.private.value, {"title": "Admin Private Update"}, status.HTTP_200_OK, "Admin Private Update"),
-        (UserRole.admin.value, False, AccessLevel.public.value, {"title": "Admin Public Update"}, status.HTTP_200_OK, "Admin Public Update"),
+        (UserRole.superadmin.value, False, AccessLevel.private.value, {"title": "Admin Private Update"}, status.HTTP_200_OK, "Admin Private Update"),
+        (UserRole.superadmin.value, False, AccessLevel.public.value, {"title": "Admin Public Update"}, status.HTTP_200_OK, "Admin Public Update"),
 
         # --- Data Validation Scenarios (by owner) ---
         # Update with invalid data (e.g., title to None, invalid date format)
@@ -234,8 +230,8 @@ def test_update_meeting_integration(
         # TODO: Add case for non-owner with explicit access to a restricted meeting if delete is allowed by business logic (usually not)
 
         # Admin deletes any meeting
-        (UserRole.admin.value, False, AccessLevel.private.value, status.HTTP_204_NO_CONTENT, status.HTTP_404_NOT_FOUND),
-        (UserRole.admin.value, False, AccessLevel.public.value, status.HTTP_204_NO_CONTENT, status.HTTP_404_NOT_FOUND),
+        (UserRole.superadmin.value, False, AccessLevel.private.value, status.HTTP_204_NO_CONTENT, status.HTTP_404_NOT_FOUND),
+        (UserRole.superadmin.value, False, AccessLevel.public.value, status.HTTP_204_NO_CONTENT, status.HTTP_404_NOT_FOUND),
     ]
 )
 def test_delete_meeting_integration(
@@ -281,7 +277,7 @@ def test_delete_meeting_integration(
         (UserRole.user.value, True, b"dummy mp3 content", "audio.mp3", "audio/mpeg", status.HTTP_201_CREATED, True),
         (UserRole.user.value, True, b"dummy wav content", "audio.wav", "audio/wav", status.HTTP_201_CREATED, True),
         # Admin uploads valid file to a meeting not owned by them
-        (UserRole.admin.value, False, b"admin upload content", "admin_audio.ogg", "audio/ogg", status.HTTP_201_CREATED, True),
+        (UserRole.superadmin.value, False, b"admin upload content", "admin_audio.ogg", "audio/ogg", status.HTTP_201_CREATED, True),
 
         # --- Access Control Failures ---
         # Non-owner (not admin) tries to upload to a meeting they don't own
@@ -607,6 +603,8 @@ def test_chat_with_meeting_unauthenticated(client):
 def test_meeting_filter_by_creator_id(
     client, user_factory, auth_headers_factory, meeting_factory
 ):
+    test_user = user_factory(email=f"creator_filter_user_{datetime.now().timestamp()}@example.com")
+    headers = auth_headers_factory(test_user)
     # Meeting A: Oldest created_at, earliest meeting_date
     # Remove created_at_override as it's not supported by the factory.
     # We will rely on the order of creation for created_at sorting.
@@ -620,7 +618,30 @@ def test_meeting_filter_by_creator_id(
     # in the actual order of their creation via meeting_factory calls.
     expected_titles_by_creation_order = [m_a.title, m_b.title, m_c.title]
 
-    response = client.get("/api/v1/meetings", params={"sort": sort_param, "limit": 3}, headers=headers)
+    sort_param = "created_at_desc"
+    response = client.get("/api/v1/meetings", params={"sort": sort_param, "created_by_id": test_user.id, "limit": 3}, headers=headers)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    items = data.get("items", [])
+    
+    assert len(items) == 3, f"Expected 3 items for sort test, got {len(items)}. Items: {items}"
+
+    item_titles = [item["title"] for item in items]
+
+    if "created_at" in sort_param:
+        if sort_param == "created_at_desc":
+            assert item_titles == list(reversed(expected_titles_by_creation_order)), \
+                f"Sort by created_at_desc failed. Expected {list(reversed(expected_titles_by_creation_order))}, got {item_titles}"
+        else: # created_at_asc
+            assert item_titles == expected_titles_by_creation_order, \
+                f"Sort by created_at_asc failed. Expected {expected_titles_by_creation_order}, got {item_titles}"
+    elif "date" in sort_param:
+        # Sort the original meeting objects by date to get the expected order of titles
+        all_meetings_for_date_sort = sorted([m_a, m_b, m_c], key=lambda x: x.date, reverse=(sort_param == "date_desc"))
+        expected_titles_by_meeting_date = [m.title for m in all_meetings_for_date_sort]
+        assert item_titles == expected_titles_by_meeting_date, \
+            f"Sort by {sort_param} failed. Expected {expected_titles_by_meeting_date}, got {item_titles}"
 
 def test_meeting_filter_by_participant_ids(
     client, user_factory, auth_headers_factory, meeting_factory, db_session
@@ -687,36 +708,251 @@ def test_meeting_list_sorting_integration(
         assert item_titles == expected_titles_by_meeting_date, \
             f"Sort by {sort_param} failed. Expected {expected_titles_by_meeting_date}, got {item_titles}"
 
-# --- Tests for Specific ID-Based Filters ---
+# --- Тесты для управления доступом к встречам ---
 
-def test_meeting_filter_by_creator_id(
-    client, user_factory, auth_headers_factory, meeting_factory
+@pytest.mark.parametrize(
+    "grantor_role, target_meeting_access, should_succeed, expected_status",
+    [
+        # Успешные сценарии
+        (UserRole.user, AccessLevel.restricted, True, status.HTTP_200_OK), # Владелец дает доступ
+        (UserRole.superadmin, AccessLevel.restricted, True, status.HTTP_200_OK), # Суперадмин дает доступ
+        # Неуспешные сценарии (права)
+        (UserRole.user, AccessLevel.restricted, False, status.HTTP_403_FORBIDDEN), # Другой пользователь пытается дать доступ
+        # Неуспешные сценарии (тип встречи)
+        (UserRole.user, AccessLevel.private, False, status.HTTP_400_BAD_REQUEST), # Попытка дать доступ к приватной
+        (UserRole.user, AccessLevel.public, False, status.HTTP_400_BAD_REQUEST), # Попытка дать доступ к публичной
+    ]
+)
+def test_grant_meeting_access(
+    client, user_factory, meeting_factory, auth_headers_factory,
+    grantor_role, target_meeting_access, should_succeed, expected_status
 ):
-    # Meeting A: Oldest created_at, earliest meeting_date
-    # Remove created_at_override as it's not supported by the factory.
-    # We will rely on the order of creation for created_at sorting.
-    m_a = meeting_factory(created_by_user=test_user, title="Meeting A_Date_Old", meeting_date=date(2024, 1, 1)) 
-    # Meeting B: Middle created_at, middle meeting_date
-    m_b = meeting_factory(created_by_user=test_user, title="Meeting B_Date_Mid", meeting_date=date(2024, 6, 1))
-    # Meeting C: Newest created_at, latest meeting_date
-    m_c = meeting_factory(created_by_user=test_user, title="Meeting C_Date_New", meeting_date=date(2024, 12, 1))
+    owner = user_factory(email="owner@example.com")
+    grantor = owner if grantor_role == UserRole.user else user_factory(email="grantor@example.com", role=grantor_role)
+    user_to_grant = user_factory(email="granted@example.com")
+    
+    meeting = meeting_factory(
+        created_by_user=owner,
+        access_level=target_meeting_access,
+        # Убедимся, что создатель добавлен при создании restricted встречи (как мы исправили)
+        # Это можно проверить или добавить в meeting_factory, если нужно
+    )
+    # Добавим создателя вручную, если meeting_factory это не делает
+    if target_meeting_access == AccessLevel.restricted and owner not in meeting.access_users:
+        meeting.access_users.append(owner)
+        db = meeting_factory.__closure__[0].cell_contents # Получаем db_session из замыкания фабрики
+        db.commit()
+        db.refresh(meeting)
 
-    # For the created_at tests to be robust, expected_titles_by_creation_order should list titles
-    # in the actual order of their creation via meeting_factory calls.
-    expected_titles_by_creation_order = [m_a.title, m_b.title, m_c.title]
+    grantor_headers = auth_headers_factory(grantor)
+    payload = {"user_id": user_to_grant.id}
 
-    response = client.get("/api/v1/meetings", params={"sort": sort_param, "limit": 3}, headers=headers)
+    response = client.post(f"/api/v1/meetings/{meeting.id}/access", json=payload, headers=grantor_headers)
 
-def test_meeting_filter_by_participant_ids(
-    client, user_factory, auth_headers_factory, meeting_factory, db_session
+    assert response.status_code == expected_status
+
+    if should_succeed:
+        data = response.json()
+        user_ids_with_access = {user["id"] for user in data}
+        assert owner.id in user_ids_with_access
+        assert user_to_grant.id in user_ids_with_access
+        # Проверим и в базе
+        db = meeting_factory.__closure__[0].cell_contents
+        db.refresh(meeting)
+        assert user_to_grant in meeting.access_users
+    else:
+        # Проверим, что пользователь НЕ был добавлен в базу
+        db = meeting_factory.__closure__[0].cell_contents
+        db.refresh(meeting)
+        assert user_to_grant not in meeting.access_users
+
+# --- Тесты на граничные случаи grant_meeting_access ---
+
+def test_grant_meeting_access_non_existent_user(client, user_factory, meeting_factory, auth_headers_factory):
+    """Тест: Попытка дать доступ несуществующему пользователю (ожидаем 404)."""
+    owner = user_factory(email="owner_grant_nonexist_user@example.com")
+    meeting = meeting_factory(created_by_user=owner, access_level=AccessLevel.restricted)
+    owner_headers = auth_headers_factory(owner)
+    non_existent_user_id = 999999
+    payload = {"user_id": non_existent_user_id}
+
+    response = client.post(f"/api/v1/meetings/{meeting.id}/access", json=payload, headers=owner_headers)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert "User to grant access to not found" in response.json().get("detail", "")
+
+def test_grant_meeting_access_user_already_has_access(client, user_factory, meeting_factory, auth_headers_factory):
+    """Тест: Попытка дать доступ пользователю, у которого уже есть доступ (ожидаем 400)."""
+    owner = user_factory(email="owner_grant_existing_access@example.com")
+    user_with_access = user_factory(email="already_has_access@example.com")
+    meeting = meeting_factory(created_by_user=owner, access_level=AccessLevel.restricted)
+    owner_headers = auth_headers_factory(owner)
+    
+    # Сначала даем доступ
+    payload_grant = {"user_id": user_with_access.id}
+    grant_response = client.post(f"/api/v1/meetings/{meeting.id}/access", json=payload_grant, headers=owner_headers)
+    assert grant_response.status_code == status.HTTP_200_OK # Убедимся, что первый раз успешно
+
+    # Пытаемся дать доступ еще раз
+    response = client.post(f"/api/v1/meetings/{meeting.id}/access", json=payload_grant, headers=owner_headers)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "User already has access" in response.json().get("detail", "")
+
+def test_grant_meeting_access_non_existent_meeting(client, user_factory, auth_headers_factory):
+    """Тест: Попытка дать доступ к несуществующей встрече (ожидаем 404)."""
+    owner = user_factory(email="owner_grant_nonexist_meeting@example.com")
+    user_to_grant = user_factory(email="grant_to_nonexist_meeting@example.com")
+    owner_headers = auth_headers_factory(owner)
+    non_existent_meeting_id = 999999
+    payload = {"user_id": user_to_grant.id}
+
+    response = client.post(f"/api/v1/meetings/{non_existent_meeting_id}/access", json=payload, headers=owner_headers)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert "Meeting not found" in response.json().get("detail", "")
+
+# --- Конец тестов на граничные случаи grant_meeting_access ---
+
+@pytest.mark.parametrize(
+    "revoker_role, user_to_remove_role, target_meeting_access, initially_has_access, should_succeed, expected_status",
+    [
+        # Успешные сценарии
+        (UserRole.user, UserRole.user, AccessLevel.restricted, True, True, status.HTTP_204_NO_CONTENT), # Владелец отзывает доступ у другого
+        (UserRole.superadmin, UserRole.user, AccessLevel.restricted, True, True, status.HTTP_204_NO_CONTENT), # Суперадмин отзывает доступ у другого
+        (UserRole.superadmin, UserRole.user, AccessLevel.restricted, True, True, status.HTTP_204_NO_CONTENT), # Суперадмин отзывает доступ у владельца (если не последний)
+        # Неуспешные сценарии (права)
+        (UserRole.user, UserRole.user, AccessLevel.restricted, True, False, status.HTTP_403_FORBIDDEN), # Другой пользователь пытается отозвать
+        # Неуспешные сценарии (тип встречи)
+        (UserRole.user, UserRole.user, AccessLevel.private, True, False, status.HTTP_400_BAD_REQUEST), # Попытка отозвать у приватной
+        (UserRole.user, UserRole.user, AccessLevel.public, True, False, status.HTTP_400_BAD_REQUEST), # Попытка отозвать у публичной
+        # Неуспешные сценарии (состояние доступа)
+        (UserRole.user, UserRole.user, AccessLevel.restricted, False, False, status.HTTP_400_BAD_REQUEST), # Попытка отозвать у того, у кого нет доступа
+        # TODO: Добавить тест - Попытка владельца отозвать доступ у себя, когда он последний (400)
+    ]
+)
+def test_revoke_meeting_access(
+    client, user_factory, meeting_factory, auth_headers_factory,
+    revoker_role, user_to_remove_role, target_meeting_access, initially_has_access, should_succeed, expected_status
 ):
-    """Test filtering meetings by participant_ids."""
-    # from models import User # User is already imported at the top
+    owner = user_factory(email="owner@example.com")
+    revoker = owner if revoker_role == UserRole.user else user_factory(email="revoker@example.com", role=revoker_role)
+    user_to_remove = user_factory(email="toremove@example.com", role=user_to_remove_role) if user_to_remove_role != UserRole.user else owner # Если удаляем владельца
 
-    main_user = user_factory(email=f"participant_filter_main_{datetime.now().timestamp()}@example.com")
+    meeting = meeting_factory(
+        created_by_user=owner,
+        access_level=target_meeting_access
+    )
+    db = meeting_factory.__closure__[0].cell_contents # Получаем db_session
 
-def test_meeting_filter_by_tag_ids(client, user_factory, auth_headers_factory, meeting_factory, db_session):
-    """Test filtering meetings by tag_ids."""
-    # from models.meeting import Tag # Tag is already imported at the top
+    # Настраиваем начальный список доступа
+    if target_meeting_access == AccessLevel.restricted:
+        meeting.access_users.append(owner)
+        if initially_has_access and user_to_remove != owner:
+             meeting.access_users.append(user_to_remove)
+        # Добавим еще одного пользователя, чтобы владелец не был последним при удалении другого
+        if user_to_remove != owner:
+             extra_user = user_factory(email="extra@example.com")
+             meeting.access_users.append(extra_user)
+        db.commit()
+        db.refresh(meeting)
+        # print(f"Initial access users: {[u.id for u in meeting.access_users]}")
 
-    main_user = user_factory(email=f"tag_filter_main_{datetime.now().timestamp()}@example.com") 
+    revoker_headers = auth_headers_factory(revoker)
+
+    response = client.delete(f"/api/v1/meetings/{meeting.id}/access/{user_to_remove.id}", headers=revoker_headers)
+
+    assert response.status_code == expected_status
+
+    if target_meeting_access == AccessLevel.restricted: # Проверяем базу только для restricted
+        db.refresh(meeting)
+        if should_succeed:
+            assert user_to_remove not in meeting.access_users
+            # print(f"Final access users (success): {[u.id for u in meeting.access_users]}")
+        elif initially_has_access: # Если не должны были преуспеть, но доступ был
+             assert user_to_remove in meeting.access_users
+             # print(f"Final access users (fail): {[u.id for u in meeting.access_users]}")
+
+# --- Тесты на граничные случаи revoke_meeting_access ---
+
+def test_revoke_meeting_access_non_existent_user(client, user_factory, meeting_factory, auth_headers_factory):
+    """Тест: Попытка отозвать доступ у несуществующего пользователя (ожидаем 404)."""
+    owner = user_factory(email="owner_revoke_nonexist_user@example.com")
+    meeting = meeting_factory(created_by_user=owner, access_level=AccessLevel.restricted)
+    owner_headers = auth_headers_factory(owner)
+    # Убедимся, что у владельца есть доступ (добавим его, если фабрика не делает)
+    if owner not in meeting.access_users:
+         db = meeting_factory.__closure__[0].cell_contents
+         meeting.access_users.append(owner)
+         db.commit()
+         db.refresh(meeting)
+
+    non_existent_user_id = 999999
+    response = client.delete(f"/api/v1/meetings/{meeting.id}/access/{non_existent_user_id}", headers=owner_headers)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert "User to remove access from not found" in response.json().get("detail", "")
+
+def test_revoke_meeting_access_non_existent_meeting(client, user_factory, auth_headers_factory):
+    """Тест: Попытка отозвать доступ к несуществующей встрече (ожидаем 404)."""
+    owner = user_factory(email="owner_revoke_nonexist_meeting@example.com")
+    user_to_remove = user_factory(email="remove_from_nonexist_meeting@example.com")
+    owner_headers = auth_headers_factory(owner)
+    non_existent_meeting_id = 999999
+
+    response = client.delete(f"/api/v1/meetings/{non_existent_meeting_id}/access/{user_to_remove.id}", headers=owner_headers)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert "Meeting not found" in response.json().get("detail", "")
+
+def test_revoke_meeting_access_owner_when_last(client, user_factory, meeting_factory, auth_headers_factory):
+    """Тест: Попытка владельца отозвать доступ у себя, когда он последний (ожидаем 400)."""
+    owner = user_factory(email="owner_revoke_self_last@example.com")
+    meeting = meeting_factory(created_by_user=owner, access_level=AccessLevel.restricted)
+    owner_headers = auth_headers_factory(owner)
+
+    # Убедимся, что только владелец имеет доступ (добавим его, если фабрика не делает)
+    if owner not in meeting.access_users:
+         db = meeting_factory.__closure__[0].cell_contents
+         meeting.access_users = [owner] # Устанавливаем только владельца
+         db.commit()
+         db.refresh(meeting)
+    # Проверка на всякий случай
+    assert len(meeting.access_users) == 1
+    assert meeting.access_users[0] == owner
+
+    response = client.delete(f"/api/v1/meetings/{meeting.id}/access/{owner.id}", headers=owner_headers)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST 
+    assert "Cannot revoke access from the meeting owner" in response.json().get("detail", "")
+    # Проверим, что доступ не отозван
+    db = meeting_factory.__closure__[0].cell_contents
+    db.refresh(meeting)
+    assert owner in meeting.access_users
+
+def test_revoke_meeting_access_owner_when_last_by_superadmin(client, user_factory, meeting_factory, auth_headers_factory):
+    """Тест: Суперадмин отзывает доступ у владельца, когда он последний (ожидаем 204)."""
+    owner = user_factory(email="owner_revoke_last_by_admin@example.com")
+    superadmin = user_factory(email="superadmin_revoke_last@example.com", role=UserRole.superadmin)
+    meeting = meeting_factory(created_by_user=owner, access_level=AccessLevel.restricted)
+    superadmin_headers = auth_headers_factory(superadmin)
+
+    # Убедимся, что только владелец имеет доступ (добавим его, если фабрика не делает)
+    if owner not in meeting.access_users:
+         db = meeting_factory.__closure__[0].cell_contents
+         meeting.access_users = [owner]
+         db.commit()
+         db.refresh(meeting)
+    # Проверка
+    assert len(meeting.access_users) == 1
+    assert meeting.access_users[0] == owner
+
+    response = client.delete(f"/api/v1/meetings/{meeting.id}/access/{owner.id}", headers=superadmin_headers)
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    # Проверим, что доступ отозван
+    db = meeting_factory.__closure__[0].cell_contents
+    db.refresh(meeting)
+    assert owner not in meeting.access_users
+
+# --- Конец тестов на граничные случаи revoke_meeting_access --- 

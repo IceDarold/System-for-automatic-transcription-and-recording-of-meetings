@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Body, File, UploadFile
+from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import or_, and_, func
 from typing import List, Optional
@@ -13,7 +14,8 @@ from models.meeting import Meeting, AccessLevel, MeetingStatus, Tag
 from models.user import User, UserRole
 from models.transcript import TranscriptBlock
 from models.file import File as DBFile # Renamed to avoid conflict with UploadFile
-from schemas.meeting import MeetingResponse, MeetingListResponse, MeetingDetailResponse, MeetingSearchParams, TranscriptBlockResponse, UserResponse, MeetingCreate, TagResponse
+from schemas.meeting import MeetingResponse, MeetingListResponse, MeetingDetailResponse, MeetingSearchParams, TranscriptBlockResponse, UserResponse as MeetingUserResponse, MeetingCreate, TagResponse, FileResponse
+from schemas.user import UserResponse # Imported for UserResponse type
 from core.auth import get_current_user
 from core.audit import log_action
 from core.config import settings # For file settings
@@ -226,7 +228,11 @@ async def get_meeting_detail(
     # Check access rights
     has_access = (
         meeting.access_level == AccessLevel.public or
-        (meeting.access_level == AccessLevel.restricted and current_user in meeting.access_users) or
+        (meeting.access_level == AccessLevel.restricted and 
+         (current_user in meeting.access_users or 
+          current_user.role == UserRole.superadmin 
+          or current_user.id == meeting.created_by_id
+          )) or
         (meeting.access_level == AccessLevel.private and (
             meeting.created_by_id == current_user.id or
             current_user.role == UserRole.superadmin
@@ -418,6 +424,10 @@ async def create_meeting(
         created_by_id=current_user.id
     )
     db.add(meeting)
+
+    if meeting.access_level == AccessLevel.restricted:
+        meeting.access_users.append(current_user)
+    
     db.commit()
     db.refresh(meeting)
 
@@ -466,7 +476,7 @@ async def upload_audio(
 
     # Check if user has rights to modify the meeting (e.g., creator or admin)
     # This logic might need adjustment based on your exact access control rules
-    if meeting.created_by_id != current_user.id and current_user.role != UserRole.admin and current_user.role != UserRole.superadmin:
+    if meeting.created_by_id != current_user.id and current_user.role != UserRole.superadmin:
         logger.warning(f"User {current_user.id} forbidden to upload audio for meeting {meeting_id}")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to upload audio to this meeting")
 
@@ -609,4 +619,82 @@ async def chat_with_meeting(
     # In a real implementation, this would call an LLM API
     return {
         "answer": "This is a placeholder answer. In a real implementation, this would provide an answer based on the meeting content."
-    } 
+    }
+
+# Pydantic model for adding a user to access list
+class MeetingAccessRequest(BaseModel):
+    user_id: int
+
+@router.post("/meetings/{meeting_id}/access", response_model=List[MeetingUserResponse])
+async def grant_meeting_access(
+    meeting_id: int,
+    access_request: MeetingAccessRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
+
+    if meeting.access_level != AccessLevel.restricted:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Access management is only applicable to restricted meetings. This meeting is {meeting.access_level}.")
+
+    # Check if current_user is the owner or a superadmin
+    if not (meeting.created_by_id == current_user.id or current_user.role == UserRole.superadmin):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the meeting owner or a superadmin can grant access")
+
+    user_to_add = db.query(User).filter(User.id == access_request.user_id).first()
+    if not user_to_add:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User to grant access to not found")
+
+    if user_to_add in meeting.access_users:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already has access to this meeting")
+
+    meeting.access_users.append(user_to_add)
+    db.commit()
+    db.refresh(meeting)
+    # Reload access_users to ensure they are fresh for the response
+    db.expire(meeting, ['access_users'])
+    
+    # Convert users to MeetingUserResponse
+    response_users = [
+        MeetingUserResponse(id=u.id, name=f"{u.first_name} {u.last_name if u.last_name else ''}".strip(), role=u.role.value if u.role else None) 
+        for u in meeting.access_users
+    ]
+    return response_users
+
+@router.delete("/meetings/{meeting_id}/access/{user_id_to_remove}", status_code=status.HTTP_204_NO_CONTENT)
+async def revoke_meeting_access(
+    meeting_id: int,
+    user_id_to_remove: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
+
+    if meeting.access_level != AccessLevel.restricted:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Access management is only applicable to restricted meetings. This meeting is {meeting.access_level}.")
+
+    if not (meeting.created_by_id == current_user.id or current_user.role == UserRole.superadmin):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the meeting owner or a superadmin can revoke access")
+
+    user_to_remove = db.query(User).filter(User.id == user_id_to_remove).first()
+    if not user_to_remove:
+        # Можно вернуть 204, даже если пользователя нет, т.к. цель - его отсутствие в списке
+        # Но для ясности, если мы хотим удалить конкретного, а его нет, можно и 404
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User to remove access from not found")
+
+    if user_to_remove not in meeting.access_users:
+        # Аналогично, можно вернуть 204, так как его и так нет в списке
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User does not have access to this meeting")
+    
+    # Нельзя удалить доступ у создателя встречи, если он единственный, кто имеет доступ (кроме superadmin)
+    if user_to_remove.id == meeting.created_by_id and len(meeting.access_users) == 1 and user_to_remove in meeting.access_users:
+         if current_user.role != UserRole.superadmin: # Superadmin может все
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot revoke access from the meeting owner if they are the only one with access.")
+
+    meeting.access_users.remove(user_to_remove)
+    db.commit()
+    return None # Стандарт для 204 No Content 
