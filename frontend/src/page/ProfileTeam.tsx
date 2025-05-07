@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { data, useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import CardMyProject from "../components/CardMyProject";
 import Page from "./page";
 import Badge from "../components/Badge";
 import Icon from "../Icons/Icon";
+import { root } from "../config";
 
 interface PostData {
   link: string;
@@ -40,12 +41,11 @@ export function RightSidebar(props: any) {
 }
 
 export default function ProfleTeam() {
-  const root = "http://127.0.0.1:8000";
   const location = useLocation();
   const [data, setData] = useState<teamData | null>(null);
   const [visible, setVisible] = useState<boolean>(false);
-
-  async function fetchTeamId(id: string) {
+  const { id } = useParams();
+  async function fetchTeamId() {
     const response = await fetch(root + `/api/v1/teams/${id}`, {
       method: "GET",
       headers: {
@@ -69,7 +69,7 @@ export default function ProfleTeam() {
     for (let i = 0; i < arr.length; i += 1) {
       const el = document.getElementById(arr[i]);
       if (el) {
-        if (visible) {
+        if (!visible) {
           if (el.hasAttribute("data-right-padding")) {
             el.removeAttribute("data-right-padding");
           }
@@ -80,8 +80,9 @@ export default function ProfleTeam() {
     }
   };
   useEffect(() => {
-    let id = location.pathname.split("/");
-    fetchTeamId(id[id.length - 1]);
+    fetchTeamId();
+  }, []);
+  useEffect(() => {
     acceptRightPaddings(visible);
   });
   if (data) {

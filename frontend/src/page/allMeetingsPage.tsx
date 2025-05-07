@@ -3,6 +3,7 @@ import Searcher from "../components/Searcher";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CardMyProject from "../components/CardMyProject";
+import { root } from "../config";
 
 interface CardData {
   id: number;
@@ -15,7 +16,6 @@ interface CardData {
 
 export default function AllMeetingsPage() {
   const navigate = useNavigate();
-  const root = "http://127.0.0.1:8000";
   const [CardDataLoad, setCardDataLoad] = useState<CardData[]>([]);
   async function fetchMeetings() {
     try {
@@ -32,7 +32,6 @@ export default function AllMeetingsPage() {
       }
 
       const data = await response.json(); // парсим JSON
-      console.log("Данные с бэка:", data);
       setCardDataLoad(formater(data));
     } catch (error) {
       console.error("Ошибка при запросе:", error);
@@ -40,7 +39,7 @@ export default function AllMeetingsPage() {
   }
   useEffect(() => {
     fetchMeetings();
-  });
+  }, []);
   function formater(data: { items: any[] }): CardData[] {
     return data.items.map((item) => ({
       id: item.id,

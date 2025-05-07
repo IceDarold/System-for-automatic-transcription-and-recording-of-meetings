@@ -7,7 +7,8 @@
   /* ---secondary--- */
   --secondary-lower: #1c1c1e;
   --secondary-medium: #a4a4a5;
-  --secondary-medium1: rgb(55, 55, 55);
+  --secondary-medium1: #373737;
+  --secondary-medium2: #282828;
 }
 
 .App {
@@ -307,7 +308,7 @@
 .badge {
   display: flex;
   flex-direction: row;
-  padding: 2px 8px;
+  padding: 4px 8px;
   border-radius: 4px;
   font-family: Roboto;
   font-size: 12px;
@@ -360,14 +361,8 @@
 }
 .mainContent {
   margin-left: 64px;
-  padding-left: 32px;
-  padding-top: 32px;
-  padding-bottom: 32px;
+  padding: 32px;
   width: 100%;
-}
-
-[data-right-padding="accept"] {
-  padding-right: 32px;
 }
 
 .Content {
@@ -424,6 +419,17 @@
   border: 0;
   border-radius: 8px;
   background-color: var(--primary-color-high);
+}
+.primaryButton:hover {
+  cursor: pointer;
+}
+/* ----Card-----------*/
+
+.Card {
+  display: flex;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: var(--secondary-lower);
 }
 
 /* -----CardMyProject--- */
@@ -519,16 +525,14 @@
 .rightSideOfTeam {
   display: flex;
   flex-direction: row;
-  padding-left: 16px;
-  padding-bottom: 16px;
+  padding: 16px;
   gap: 8px;
-  padding-top: 16px;
   min-height: calc(100vh - 64px);
   width: 100%;
 }
 
-.rightSideOfTeam [data-right-padding="accept"] {
-  padding-right: 16px;
+[data-right-padding="accept"] {
+  padding-right: 0;
 }
 
 .mainPartOfboardPosts {
@@ -605,5 +609,130 @@
 .thirdBlockOfBoardPosts {
   height: 100vh;
   top: 0px;
+  background-color: var(--secondary-lower);
+}
+
+/* -----Meeting Page ---- */
+.sidesOnMeetings {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  justify-content: center;
+}
+
+/*-----Sites ----*/
+.leftSideOnMeetings,
+.rightSideOnMeetings {
+  min-height: calc(100vh - 96px);
+  background-color: var(--secondary-lower);
+  width: 100%;
+  padding: 32px;
+}
+
+.leftSideOnMeetings {
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.rightSideOnMeetings {
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+/* --------Audioplayer--- */
+
+.controls {
+  display: flex;
+  flex-direction: column;
+}
+
+.controls .displayInfo {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  color: #fff;
+  gap: 16px;
+}
+
+.seek-bar {
+  width: 100%;
+  -webkit-appearance: none;
+  height: 2px;
+  background-color: var(--secondary-medium1);
+}
+
+.seek-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: var(--primary-color-high);
+}
+
+.btnOnClickPlayAudio {
+  display: flex;
+  align-self: center;
+  background-color: var(--secondary-lower);
+  outline: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.btnOnClickPlayAudio:hover {
+  cursor: pointer;
+}
+
+.h1-of-list {
+  color: #fff;
+  padding-top: 0;
+  margin-top: 0;
+  font-size: 20px;
+  font-family: inherit;
+}
+
+.BagdesArea {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: var(--secondary-medium2);
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.description-card {
+  color: #fff;
+  font-size: 15px;
+}
+/* -----Panel---- */
+
+.panel-tabs {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+}
+
+.panelSelect {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.panelSelect p {
+  color: #fff;
+  font-weight: 500;
+}
+
+[data-panel-selected="true"] {
+  background-color: var(--secondary-medium2);
+}
+
+[data-panel-selected="false"] {
   background-color: var(--secondary-lower);
 }

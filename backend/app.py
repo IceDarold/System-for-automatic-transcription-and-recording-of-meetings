@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+import os
 
 app = FastAPI()
 app.add_middleware(
@@ -10,14 +12,14 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "Set-Cookie"],
 )
 
-acces_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+access_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
 refresh_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
 apiLink = "/api/v1"
 
 @app.post(apiLink + "/auth/login")
 def login():
     return {
-        "access_token": acces_token,
+        "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer"
         }
@@ -494,3 +496,28 @@ def team(team_id: str):
   "updated_at": "2025-05-05T14:21:34.761Z"
 }
   return fakeDataTeam
+
+@app.get(apiLink + "/meetings/{meeting_id}/audio")
+def audio(meeting_id):
+  file_path = os.path.join("./audio", "1.mp3")
+  return FileResponse(path=file_path, media_type="audio/mpeg", filename="1.mp3")
+
+
+@app.get(apiLink + "/meetings/{id}")
+def getDataMeetings(id: int):
+  return {
+    "title": f"Новый проект {id}",
+"tags": [
+  "стратегия",
+  "продукт",
+  "команда",
+  "проекты",
+  "эффективность",
+  "бюджет",
+  "клиенты",
+  "маркетинг",
+  "отчеты",
+  "инновации"
+], "description": "Еженедельный созвон команды для обсуждения текущих задач, прогресса по проектам, выявления блокеров и планов на ближайшую неделю.\n\
+    Цель: синхронизация участников, повышение прозрачности процессов и оперативное решение возникающих вопросов. "
+  }

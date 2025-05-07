@@ -3,6 +3,7 @@ import Searcher from "../components/Searcher";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CardMyProject from "../components/CardMyProject";
+import { root } from "../config";
 
 interface CardData {
   id: number;
@@ -14,7 +15,6 @@ interface CardData {
 }
 
 export default function MyTeamsPage() {
-  const root = "http://127.0.0.1:8000";
   const [CardDataLoad, setCardDataLoad] = useState<CardData[]>([]);
   const navigate = useNavigate();
   async function fetchMeetings() {
@@ -40,7 +40,7 @@ export default function MyTeamsPage() {
   }
   useEffect(() => {
     fetchMeetings();
-  });
+  }, []);
   function formater(data: { items: any[] }): CardData[] {
     return data.items.map((item) => ({
       id: item.id,

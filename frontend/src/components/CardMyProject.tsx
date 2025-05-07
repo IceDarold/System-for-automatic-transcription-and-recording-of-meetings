@@ -1,8 +1,5 @@
-import { data } from "react-router-dom";
 import Badge from "./Badge";
 import { useNavigate } from "react-router-dom";
-import { hover } from "@testing-library/user-event/dist/hover";
-
 interface CardProps {
   key?: string | number;
   main?: string;

@@ -1,10 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { root } from "../config";
+
 export default function Login() {
   const navigate = useNavigate();
   const [auth, setAuth] = React.useState("active-tabLogReg");
   const [reg, setReg] = React.useState("passive-tabLogReg");
-  const root = "http://127.0.0.1:8000";
   const loginEndpoint = "/api/v1/auth/login";
   const registerEndpoint = "/api/v1/auth/register";
   const clickOnAuth = () => {

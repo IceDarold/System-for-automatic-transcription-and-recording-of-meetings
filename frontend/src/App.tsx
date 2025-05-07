@@ -12,6 +12,8 @@ import DevMode from "./page/DevPage";
 import MyTeamsPage from "./page/myTeamsPage";
 import AllMeetingsPage from "./page/allMeetingsPage";
 import ProfleTeam from "./page/ProfileTeam";
+import CreatePage from "./page/createPage";
+import Meeting from "./page/Meeting";
 
 function App() {
   const [access_token, setAccess_token] = useState<string | null>(
@@ -34,12 +36,19 @@ function App() {
               )
             }
           />
-          <Route path="/allMeetings" element={<AllMeetingsPage />} />
-          <Route path="/teams" element={<MyTeamsPage />} />
-          <Route path="/myMeetings" element={<MyProjectPage />} />
+          {/* -------Login----- */}
           <Route path="/login" element={<Login />} />
-          <Route path="/dev" element={<DevMode />} />
+          {/* ------AllMeetengs----- */}
+          <Route path="/allMeetings" element={<AllMeetingsPage />} />
+          <Route path="/meetings/:id" element={<Meeting />} />
+          {/*----------My projects */}
+          <Route path="/myMeetings" element={<MyProjectPage />} />
+          <Route path="/create" element={<CreatePage />} />
+          {/* -----Teams----- */}
+          <Route path="/teams" element={<MyTeamsPage />} />
           <Route path="/teams/:id" element={<ProfleTeam />} />
+          {/* --------DEV----- */}
+          <Route path="/dev" element={<DevMode />} />
         </Route>
       </Routes>
     </Router>

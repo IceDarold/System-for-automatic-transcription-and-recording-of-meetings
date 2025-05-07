@@ -115,6 +115,28 @@ export default function Icon(props: IconProps) {
         />
       </svg>
     );
+  } else if (props.type === "play") {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+      >
+        <path fill={props.color} d="M8 5.14v14l11-7z" />
+      </svg>
+    );
+  } else if (props.type === "pause") {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+      >
+        <path fill={props.color} d="M14 19V5h4v14zm-8 0V5h4v14z" />
+      </svg>
+    );
   } else {
     return <div></div>;
   }

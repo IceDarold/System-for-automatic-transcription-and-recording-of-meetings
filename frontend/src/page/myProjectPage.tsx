@@ -3,6 +3,7 @@ import Searcher from "../components/Searcher";
 import { useNavigate } from "react-router-dom";
 import CardMyProject from "../components/CardMyProject";
 import { useEffect, useState } from "react";
+import { root } from "../config";
 
 interface CardData {
   id: number;
@@ -25,8 +26,6 @@ function formater(data: { items: any[] }): CardData[] {
     status: item.is_ready ? "Опубликовано" : "В работе",
   }));
 }
-
-const root = "http://127.0.0.1:8000";
 function MyProjectPage() {
   const [CardDataLoad, setCardDataLoad] = useState<CardData[]>([]);
   const navigate = useNavigate();
@@ -53,7 +52,7 @@ function MyProjectPage() {
   }
   useEffect(() => {
     fetchMeetings();
-  });
+  }, []);
   return (
     <Page>
       <div className="Content">
