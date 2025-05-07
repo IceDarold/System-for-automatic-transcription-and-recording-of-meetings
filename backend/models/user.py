@@ -39,15 +39,31 @@ class User(Base):
     transcript_blocks = relationship("TranscriptBlock", back_populates="speaker")
 
     def __init__(self, **kwargs):
-        # Validate email
-        if not re.match(r"[^@]+@[^@]+\.[^@]+", kwargs.get("email", "")):
-            raise ValueError("Invalid email format")
+        # Валидация email
+        email = kwargs.get("email", "")
+        if not email:
+            raise ValueError("Email is required")
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            raise ValueError("Invalid email format. Please enter a valid email address.")
         
-        # Validate required fields
-        if not kwargs.get("first_name"):
+        # Проверка длины email
+        if len(email) > 255:
+            raise ValueError("Email is too long (maximum 255 characters)")
+        
+        # Валидация имени и фамилии    
+        first_name = kwargs.get("first_name", "")
+        if not first_name or not first_name.strip():
             raise ValueError("First name is required")
-        if not kwargs.get("last_name"):
+        if len(first_name) > 100:
+            raise ValueError("First name is too long (maximum 100 characters)")
+        
+        last_name = kwargs.get("last_name", "")
+        if not last_name or not last_name.strip():
             raise ValueError("Last name is required")
+        if len(last_name) > 100:
+            raise ValueError("Last name is too long (maximum 100 characters)")
+        
+        # Валидация пароля
         if not kwargs.get("password_hash"):
             raise ValueError("Password hash is required")
         

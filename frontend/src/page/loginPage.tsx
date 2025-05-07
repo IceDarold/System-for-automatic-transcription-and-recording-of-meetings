@@ -52,6 +52,13 @@ export default function Login() {
     } else if (formType === "register") {
       urlSend += registerEndpoint;
     }
+    
+    // Скрываем ошибки перед отправкой формы
+    const errEl = document.getElementById("error-login-text-" + formType);
+    if (errEl) {
+      errEl.style.display = "none";
+    }
+    
     try {
       const response = await fetch(urlSend, {
         method: "POST",
@@ -62,15 +69,15 @@ export default function Login() {
       });
 
       if (!response.ok) {
-        console.log("Error place");
-        console.log("error-login-text-" + formType);
-        const errEl = document.getElementById("error-login-text-" + formType);
+        const errorData = await response.json();
+        console.error("Ошибка сервера:", errorData);
+        
         if (errEl) {
-          console.log("set-error");
+          // Показываем сообщение об ошибке из ответа сервера
+          errEl.textContent = errorData.detail || "Произошла ошибка при авторизации";
           errEl.style.display = "flex";
         }
-
-        throw new Error("Ошибка сети");
+        return;
       }
 
       const data = await response.json(); // получаем JSON-ответ
@@ -86,6 +93,10 @@ export default function Login() {
       window.location.reload();
     } catch (error) {
       console.error("Ошибка при входе:", error);
+      if (errEl) {
+        errEl.textContent = "Произошла ошибка при соединении с сервером";
+        errEl.style.display = "flex";
+      }
     }
     console.log(urlSend);
   }
@@ -136,7 +147,7 @@ export default function Login() {
                       />
                       <label htmlFor="password">Пароль</label>
                     </div>
-                    <p id="error-login-text-login">
+                    <p id="error-login-text-login" className="error-message">
                       Некорректный логин или пароль
                     </p>
                     <button className="sendFormButton" type="submit">
@@ -201,7 +212,7 @@ export default function Login() {
                       />
                       <label htmlFor="password">Пароль</label>
                     </div>
-                    <p id="error-login-text-register">
+                    <p id="error-login-text-register" className="error-message">
                       Некорректный логин или пароль
                     </p>
                     <button className="sendFormButton" type="submit">

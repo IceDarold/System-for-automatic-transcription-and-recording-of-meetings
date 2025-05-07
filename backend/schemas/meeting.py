@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
 from typing import List, Optional, Dict, Any
 from datetime import datetime, time
 from models.meeting import MeetingStatus, AccessLevel
@@ -22,8 +22,7 @@ class FileResponse(BaseModel):
     url: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TranscriptBlockResponse(BaseModel):
     speaker: Optional[UserResponse]
@@ -67,23 +66,27 @@ class MeetingResponse(MeetingBase):
     tags: List[TagResponse] = []
     participants: List[Dict[str, Any]] = []
 
-    class Config:
-        from_attributes = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat(),
-            time: lambda v: v.strftime("%H:%M:%S") if v else None
-        }
+    model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer('created_at')
+    def serialize_created_at(self, v: datetime) -> str:
+        return v.isoformat()
+
+    @field_serializer('updated_at', when_used='json-unless-none')
+    def serialize_updated_at(self, v: Optional[datetime]) -> Optional[str]:
+        if v is None:
+            return None
+        return v.isoformat()
+
+    @field_serializer('start_time', 'end_time', when_used='json-unless-none')
+    def serialize_optional_time(self, v: Optional[time]) -> Optional[str]:
+        if v is None:
+            return None
+        return v.strftime("%H:%M:%S")
 
 class MeetingDetailResponse(MeetingResponse):
     transcript_blocks: List[Dict[str, Any]] = []
     files: List[FileResponse] = []
-
-    class Config:
-        from_attributes = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat(),
-            time: lambda v: v.strftime("%H:%M:%S") if v else None
-        }
 
 class MeetingSearchParams(BaseModel):
     search: Optional[str] = None

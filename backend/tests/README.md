@@ -1,120 +1,87 @@
-# Backend Tests
+# Тесты для системы автоматической транскрипции и записи встреч
 
-This directory contains the test suite for the backend application. The tests are organized into several categories:
+## Настройка окружения
+
+### Настройка тестовой базы данных PostgreSQL
+
+Для запуска полных интеграционных тестов необходима PostgreSQL база данных. Тесты автоматически обнаруживают доступность PostgreSQL и в случае ее отсутствия будут использовать SQLite.
+
+#### Вариант 1: Docker
+
+```bash
+# Запуск PostgreSQL контейнера для тестов
+docker run --name test-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=test_meetings_db -p 5432:5432 -d postgres:13
+
+# Проверка работоспособности
+docker exec -it test-postgres psql -U postgres -c "SELECT version();"
+```
+
+#### Вариант 2: Локальная установка PostgreSQL
+
+1. Установите PostgreSQL
+2. Создайте базу данных для тестов:
+```sql
+CREATE DATABASE test_meetings_db;
+```
+
+### Настройка переменных окружения
+
+Вы можете настроить параметры подключения к PostgreSQL с помощью следующих переменных окружения:
+
+```bash
+# Для Windows (PowerShell)
+$env:PG_TEST_USER = "ваш_пользователь"         # По умолчанию: postgres
+$env:PG_TEST_PASSWORD = "ваш_пароль"           # По умолчанию: postgres
+$env:PG_TEST_HOST = "хост_базы_данных"         # По умолчанию: localhost
+$env:PG_TEST_PORT = "порт_базы_данных"         # По умолчанию: 5432
+$env:PG_TEST_DB = "имя_тестовой_базы_данных"   # По умолчанию: test_meetings_db
+
+# ИЛИ задать полный URL подключения
+$env:POSTGRES_TEST_DATABASE_URL = "postgresql://пользователь:пароль@хост:порт/база_данных"
+
+# Для Linux/Mac
+export PG_TEST_USER="ваш_пользователь"
+export PG_TEST_PASSWORD="ваш_пароль"
+export PG_TEST_HOST="хост_базы_данных"
+export PG_TEST_PORT="порт_базы_данных"
+export PG_TEST_DB="имя_тестовой_базы_данных"
+
+# ИЛИ задать полный URL подключения
+export POSTGRES_TEST_DATABASE_URL="postgresql://пользователь:пароль@хост:порт/база_данных"
+```
+
+## Запуск тестов
+
+### Запуск всех тестов
+
+```bash
+cd backend
+python -m pytest
+```
+
+### Запуск конкретной группы тестов
+
+```bash
+# Тесты авторизации
+python -m pytest tests/integration/test_auth.py
+
+# Тесты для встреч
+python -m pytest tests/integration/test_meetings.py
+```
+
+### Запуск конкретного теста
+
+```bash
+python -m pytest tests/integration/test_meetings.py::test_meeting_search_integration -v
+```
+
+## Особенности запуска тестов
+
+- Тесты полнотекстового поиска (`test_meeting_search_integration`) требуют PostgreSQL и будут пропущены при использовании SQLite
+- Если тесты не могут подключиться к PostgreSQL, они автоматически используют SQLite в памяти
+- При использовании PostgreSQL, после каждого теста данные очищаются с помощью `TRUNCATE TABLE CASCADE`
 
 ## Test Structure
 
 - `conftest.py` - Common test fixtures and configuration
-- `test_models.py` - Tests for database models
-- `test_api.py` - Tests for API endpoints
-- `test_services.py` - Tests for business logic services
-
-## Running Tests
-
-### Prerequisites
-
-1. Install test dependencies:
-```bash
-pip install -r requirements-dev.txt
-```
-
-2. Set up environment variables:
-```bash
-export TESTING=true
-export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db
-```
-
-### Running Tests
-
-Run all tests:
-```bash
-pytest
-```
-
-Run specific test file:
-```bash
-pytest tests/test_models.py
-```
-
-Run tests with coverage:
-```bash
-pytest --cov=app tests/
-```
-
-Run tests with verbose output:
-```bash
-pytest -v
-```
-
-## Test Categories
-
-### Model Tests
-- Test model creation and validation
-- Test relationships between models
-- Test model constraints and validations
-
-### API Tests
-- Test all HTTP endpoints
-- Test request validation
-- Test response formats
-- Test error handling
-- Test authentication and authorization
-
-### Service Tests
-- Test business logic
-- Test external service integrations
-- Test error handling
-- Test edge cases
-
-## Writing New Tests
-
-1. Create a new test file in the appropriate category
-2. Use existing fixtures from `conftest.py`
-3. Follow the naming convention: `test_*.py`
-4. Write descriptive test names
-5. Include docstrings for test functions
-6. Use appropriate assertions
-7. Mock external dependencies
-
-## Best Practices
-
-1. Keep tests independent
-2. Use meaningful test data
-3. Clean up after tests
-4. Mock external services
-5. Test both success and failure cases
-6. Test edge cases
-7. Keep tests fast and focused
-
-## Continuous Integration
-
-Tests are automatically run on GitHub Actions for:
-- Every push to main and develop branches
-- Every pull request
-- Scheduled runs
-
-## Coverage Reports
-
-Coverage reports are generated automatically and can be viewed:
-1. In the terminal when running tests with coverage
-2. In the GitHub Actions artifacts
-3. On Codecov.io (if configured)
-
-## Troubleshooting
-
-Common issues and solutions:
-
-1. Database connection issues:
-   - Check DATABASE_URL environment variable
-   - Ensure PostgreSQL is running
-   - Check database permissions
-
-2. Test failures:
-   - Check test data
-   - Verify environment variables
-   - Check for missing dependencies
-
-3. Slow tests:
-   - Use appropriate fixtures
-   - Mock external services
-   - Optimize database queries 
+- `test_models.py`

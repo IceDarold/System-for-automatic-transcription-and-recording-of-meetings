@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr, constr
-from typing import Optional, List
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from typing import Optional, List, Annotated
 from datetime import datetime, date
 from models.user import UserRole
 from models.meeting import MeetingStatus, AccessLevel
@@ -11,13 +11,13 @@ class UserBase(BaseModel):
     middle_name: Optional[str] = None
 
 class UserCreate(UserBase):
-    password: constr(min_length=8)
+    password: Annotated[str, Field(min_length=8)]
 
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     middle_name: Optional[str] = None
-    password: Optional[constr(min_length=8)] = None
+    password: Optional[Annotated[str, Field(min_length=8)]] = None
 
 class UserResponse(UserBase):
     id: int
@@ -26,8 +26,7 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MeetingResponse(BaseModel):
     id: int
@@ -36,13 +35,11 @@ class MeetingResponse(BaseModel):
     date: date
     access_level: AccessLevel
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AuditLogResponse(BaseModel):
     action: str
     timestamp: datetime
     target: dict
 
-    class Config:
-        from_attributes = True 
+    model_config = ConfigDict(from_attributes=True) 

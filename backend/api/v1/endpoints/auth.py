@@ -33,47 +33,89 @@ def register(
     - **middle_name**: Отчество пользователя (опционально)
     - **password**: Пароль пользователя
     """
+    import re
+    if not re.fullmatch(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$".strip(), email):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid email format. Please enter a valid email address."
+        )
+    
+    # Проверка на пустые поля
+    if not first_name or not first_name.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="First name cannot be empty."
+        )
+    
+    if not last_name or not last_name.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Last name cannot be empty."
+        )
+    
+    if not password or len(password) < 6:
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 6 characters long."
+        )
+    
+    # Проверка на существующего пользователя
     user = db.query(User).filter(User.email == email).first()
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this email already exists in the system.",
         )
-    user = User(
-        email=email,
-        first_name=first_name,
-        last_name=last_name,
-        middle_name=middle_name,
-        password_hash=security.get_password_hash(password),
-        role="user"
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    
+    try:
+        user = User(
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            middle_name=middle_name,
+            password_hash=security.get_password_hash(password),
+            role="user"
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
 
-    # Create tokens
-    access_token = security.create_access_token(
-        data={"sub": user.id, "role": user.role}
-    )
-    refresh_token = security.create_refresh_token(
-        data={"sub": user.id}
-    )
+        # Create tokens
+        access_token = security.create_access_token(
+            data={"sub": user.id, "role": user.role}
+        )
+        refresh_token = security.create_refresh_token(
+            data={"sub": user.id}
+        )
 
-    # Log registration
-    audit_log = AuditLog(
-        user_id=user.id,
-        action=AuditAction.register,
-        ip_address=request.client.host,
-        user_agent=request.headers.get("user-agent"),
-    )
-    db.add(audit_log)
-    db.commit()
+        # Log registration
+        audit_log = AuditLog(
+            user_id=user.id,
+            action=AuditAction.register,
+            ip_address=request.client.host,
+            user_agent=request.headers.get("user-agent"),
+        )
+        db.add(audit_log)
+        db.commit()
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-    }
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+        }
+    except ValueError as e:
+        # Отлов ошибок валидации модели
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+    except Exception as e:
+        # Отлов прочих ошибок
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Registration failed: {str(e)}",
+        )
 
 
 @router.post("/login", response_model=Token)
@@ -85,36 +127,60 @@ def login(
     """
     OAuth2 compatible token login, get an access token for future requests.
     """
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not security.verify_password(form_data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
+    try:
+        import re
+        if not re.fullmatch(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$".strip(), form_data.username):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid email format. Please enter a valid email address."
+            )
+            
+        user = db.query(User).filter(User.email == form_data.username).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User with this email not found.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            
+        if not security.verify_password(form_data.password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect password.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        access_token = security.create_access_token(
+            data={"sub": user.id, "role": user.role}
+        )
+        refresh_token = security.create_refresh_token(
+            data={"sub": user.id}
         )
 
-    access_token = security.create_access_token(
-        data={"sub": user.id, "role": user.role}
-    )
-    refresh_token = security.create_refresh_token(
-        data={"sub": user.id}
-    )
+        # Log login
+        audit_log = AuditLog(
+            user_id=user.id,
+            action=AuditAction.login,
+            ip_address=request.client.host,
+            user_agent=request.headers.get("user-agent"),
+        )
+        db.add(audit_log)
+        db.commit()
 
-    # Log login
-    audit_log = AuditLog(
-        user_id=user.id,
-        action=AuditAction.login,
-        ip_address=request.client.host,
-        user_agent=request.headers.get("user-agent"),
-    )
-    db.add(audit_log)
-    db.commit()
-
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-    }
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+        }
+    except HTTPException:
+        # Пробрасываем HTTP ошибки дальше
+        raise
+    except Exception as e:
+        # Отлов прочих ошибок
+        raise HTTPException(
+            status_code=500,
+            detail=f"Login failed: {str(e)}",
+        )
 
 
 @router.post("/refresh", response_model=Token)

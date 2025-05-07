@@ -1,74 +1,69 @@
-import os
-import subprocess
-from sqlalchemy import create_engine, inspect
-from sqlalchemy.orm import sessionmaker
-from database import Base, get_db
-import importlib
-import sys
+# reset_db.py
 
-def reset_database():
-    """
-    Полностью сбрасывает и пересоздает базу данных
-    """
-    print("Resetting database...")
-    
-    # Получаем параметры подключения из переменных окружения
-    db_host = os.environ.get("POSTGRES_SERVER", "db")
-    db_port = os.environ.get("POSTGRES_PORT", "5432")
-    db_user = os.environ.get("POSTGRES_USER", "postgres")
-    db_pass = os.environ.get("POSTGRES_PASSWORD", "postgres")
-    db_name = os.environ.get("POSTGRES_DB", "meeting_system")
-    
-    # Подключаемся к базе postgres для управления базами данных
-    admin_engine = create_engine(f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/postgres")
-    
-    # Отключаем активные подключения и удаляем базу данных
-    with admin_engine.connect() as conn:
-        conn.execute("COMMIT")
-        conn.execute(f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{db_name}'")
-        conn.execute("COMMIT")
-        
-        # Удаляем базу данных (если существует)
-        conn.execute("COMMIT")
-        conn.execute(f"DROP DATABASE IF EXISTS {db_name}")
-        
-        # Создаем базу данных заново
-        conn.execute("COMMIT")
-        conn.execute(f"CREATE DATABASE {db_name}")
-    
-    # Создаем движок для новой базы данных
-    engine = create_engine(f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}")
-    
-    # Импортируем все модели, чтобы они были зарегистрированы в Base.metadata
-    import_all_models()
-    
-    # Создаем все таблицы
-    print("Creating tables...")
-    Base.metadata.create_all(engine)
-    
-    print("Database reset successfully!")
-    return True
+import os
+import sys
+import importlib
+import argparse
+from pathlib import Path
+
+# Ensure the project root (backend directory) is in sys.path
+_backend_dir = Path(__file__).resolve().parent.parent
+if str(_backend_dir) not in sys.path:
+    sys.path.insert(0, str(_backend_dir))
+
+from sqlalchemy import create_engine
+from core.config import settings
+from database import Base, init_db
 
 def import_all_models():
-    """
-    Импортирует все модели, чтобы они были зарегистрированы в Base.metadata
-    """
-    models_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models")
-    
-    # Добавляем директорию верхнего уровня в sys.path
-    parent_dir = os.path.dirname(os.path.dirname(__file__))
-    if parent_dir not in sys.path:
-        sys.path.insert(0, parent_dir)
-    
-    # Импортируем все .py файлы из директории models
+    models_path = Path(__file__).resolve().parent / "models"
+
     for file in os.listdir(models_path):
-        if file.endswith(".py") and file != "__init__.py":
-            module_name = file[:-3]  # Убираем расширение .py
-            try:
-                importlib.import_module(f"models.{module_name}")
-                print(f"Imported model: {module_name}")
-            except ImportError as e:
-                print(f"Failed to import model {module_name}: {e}")
+        if file.endswith(".py") and not file.startswith("__"):
+            module_name = file[:-3]
+            importlib.import_module(f"models.{module_name}")
+            print(f"Imported model: models.{module_name}")
+
+def reset_database(with_test_data=False, force=False):
+    # 🔐 Защита от запуска в проде
+    if settings.APP_ENV == "production" and not force:
+        print("🚫 Refusing to run in production without --force")
+        sys.exit(1)
+
+    print(f"🔄 Resetting PostgreSQL database (env: {settings.APP_ENV})...")
+
+    db_name = settings.POSTGRES_DB
+
+    target_url = settings.DATABASE_URL
+    print(f"🔄 Resetting PostgreSQL URL: {target_url}...")
+
+    admin_engine = create_engine(target_url, isolation_level="AUTOCOMMIT", client_encoding='utf8')
+    with admin_engine.connect() as conn:
+        print("🔌 Terminating existing connections...")
+        conn.execute(f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{db_name}'")
+        print("💣 Dropping database...")
+        conn.execute(f"DROP DATABASE IF EXISTS {db_name}")
+        print("🧱 Creating database...")
+        conn.execute(f"CREATE DATABASE {db_name} ENCODING 'utf8'")
+
+    target_engine = create_engine(target_url)
+    import_all_models()
+    print("📦 Creating tables...")
+    Base.metadata.create_all(bind=target_engine)
+
+    init_db()
+
+    if with_test_data:
+        print("🌱 Seeding test data...")
+        from seed_all import seed_all
+        seed_all()
+
+    print("✅ Done.")
 
 if __name__ == "__main__":
-    reset_database() 
+    parser = argparse.ArgumentParser(description="Reset the PostgreSQL database")
+    parser.add_argument("--with-test-data", action="store_true", help="Seed database with test data after reset")
+    parser.add_argument("--force", action="store_true", help="Force execution even in production environment")
+
+    args = parser.parse_args()
+    reset_database(with_test_data=args.with_test_data, force=args.force)

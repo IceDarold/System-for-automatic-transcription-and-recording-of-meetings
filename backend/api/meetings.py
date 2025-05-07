@@ -3,16 +3,31 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import or_, and_, func
 from typing import List, Optional
 from datetime import datetime
+import shutil # For disk space and file operations
+import os
+from pathlib import Path
+import logging
 
 from database import get_db
 from models.meeting import Meeting, AccessLevel, MeetingStatus, Tag
 from models.user import User, UserRole
 from models.transcript import TranscriptBlock
+from models.file import File as DBFile # Renamed to avoid conflict with UploadFile
 from schemas.meeting import MeetingResponse, MeetingListResponse, MeetingDetailResponse, MeetingSearchParams, TranscriptBlockResponse, UserResponse, MeetingCreate, TagResponse
 from core.auth import get_current_user
 from core.audit import log_action
+from core.config import settings # For file settings
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+# Helper function to check disk space
+def has_sufficient_disk_space(file_size_bytes: int) -> bool:
+    # Check space in the storage directory's partition
+    total, used, free = shutil.disk_usage(Path(settings.STORAGE_DIR).resolve().parent)
+    # Add a small buffer, e.g., 10% of file size or a fixed amount
+    buffer_bytes = max(file_size_bytes * 0.1, 10 * 1024 * 1024) # 10MB buffer or 10% of file
+    return free >= file_size_bytes + buffer_bytes
 
 @router.get("/meetings", response_model=MeetingListResponse)
 async def get_meetings(
@@ -443,31 +458,114 @@ async def upload_audio(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Upload an audio file for a meeting"""
+    logger.info(f"User {current_user.id} attempting to upload audio for meeting {meeting_id}")
     meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
     if not meeting:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Meeting not found"
-        )
-    
-    # Check if user has permission to update
-    if meeting.created_by_id != current_user.id and current_user.role != UserRole.superadmin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have permission to update this meeting"
-        )
-    
-    # Check file type
-    if not file.content_type.startswith('audio/'):
+        logger.warning(f"Meeting {meeting_id} not found for audio upload by user {current_user.id}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
+
+    # Check if user has rights to modify the meeting (e.g., creator or admin)
+    # This logic might need adjustment based on your exact access control rules
+    if meeting.created_by_id != current_user.id and current_user.role != UserRole.admin and current_user.role != UserRole.superadmin:
+        logger.warning(f"User {current_user.id} forbidden to upload audio for meeting {meeting_id}")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to upload audio to this meeting")
+
+    # Validate file type (MIME type)
+    if file.content_type not in settings.ALLOWED_AUDIO_MIME_TYPES:
+        logger.warning(f"Invalid audio file type '{file.content_type}' for meeting {meeting_id} by user {current_user.id}. Allowed: {settings.ALLOWED_AUDIO_MIME_TYPES}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only audio files are allowed"
+            detail=f"Invalid file type: {file.content_type}. Allowed types: {', '.join(settings.ALLOWED_AUDIO_MIME_TYPES)}"
         )
     
-    # Forward to the studio upload method
-    from api.studio import upload_meeting_file
-    return await upload_meeting_file(meeting_id, file, current_user, db)
+    # Validate file size
+    # We need to read the file to get its actual size, as file.size might not be reliable for streams.
+    # To avoid reading the whole file into memory if it's too large, we can do it in chunks or seek.
+    file.file.seek(0, os.SEEK_END)
+    file_size = file.file.tell()  # Get file size in bytes
+    file.file.seek(0) # Reset cursor to the beginning
+
+    max_size_bytes = settings.MAX_AUDIO_FILE_SIZE_MB * 1024 * 1024
+    if file_size > max_size_bytes:
+        logger.warning(f"Audio file for meeting {meeting_id} by user {current_user.id} too large ({file_size} bytes). Max: {max_size_bytes} bytes.")
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large. Maximum size is {settings.MAX_AUDIO_FILE_SIZE_MB}MB."
+        )
+    
+    # Check for sufficient disk space
+    if not has_sufficient_disk_space(file_size):
+        logger.error(f"Insufficient disk space to store audio file for meeting {meeting_id} (size: {file_size} bytes).")
+        raise HTTPException(
+            status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
+            detail="Insufficient disk space to store the file. Please contact support."
+        )
+
+    storage_path = Path(settings.STORAGE_DIR)
+    meeting_audio_dir = storage_path / "meetings" / str(meeting_id) / "audio"
+    try:
+        meeting_audio_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        logger.error(f"Failed to create directory {meeting_audio_dir} for meeting {meeting_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not create storage directory")
+    
+    # Sanitize filename to prevent directory traversal and other attacks
+    # Using file.filename directly can be risky
+    original_filename = Path(file.filename)
+    safe_filename = f"{original_filename.stem}_{int(datetime.utcnow().timestamp())}{original_filename.suffix}"
+    file_path = meeting_audio_dir / safe_filename
+
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        logger.info(f"Audio file '{safe_filename}' (size: {file_size} bytes) saved to {file_path} for meeting {meeting_id}")
+    except Exception as e:
+        logger.error(f"Could not save audio file '{safe_filename}' for meeting {meeting_id}: {str(e)}", exc_info=True)
+        # Attempt to clean up partially written file if error occurs
+        if file_path.exists():
+            try:
+                os.remove(file_path)
+            except Exception as remove_exc:
+                logger.error(f"Failed to remove partially written file {file_path} after error: {remove_exc}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not save file")
+    finally:
+        await file.close()
+
+    # Create a record in the File table
+    db_file = DBFile(
+        filename=safe_filename,
+        filepath=str(file_path.relative_to(storage_path)), # Store relative path
+        filesize=file_size,
+        mimetype=file.content_type,
+        uploaded_by_id=current_user.id,
+        meeting_id=meeting.id  # Link to the meeting
+    )
+    db.add(db_file)
+    
+    # Update meeting with the new audio file ID
+    meeting.audio_file_id = db_file.id # This assumes audio_file_id exists on Meeting model
+    meeting.status = MeetingStatus.pending # Reset status for reprocessing if needed
+    meeting.updated_at = datetime.utcnow()
+
+    try:
+        db.commit()
+        db.refresh(db_file)
+        db.refresh(meeting)
+        logger.info(f"Audio file record created (ID: {db_file.id}) and meeting {meeting_id} updated for user {current_user.id}")
+        await log_action(db, current_user.id, "upload_audio", resource_id=meeting.id, resource_type="meeting", details={"file_id": db_file.id, "filename": safe_filename})
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Database error after saving audio file for meeting {meeting_id}: {str(e)}", exc_info=True)
+        # If DB fails, try to delete the orphaned file
+        if file_path.exists():
+            try:
+                os.remove(file_path)
+                logger.info(f"Orphaned audio file {file_path} deleted after DB error.")
+            except Exception as remove_exc:
+                logger.error(f"Failed to remove orphaned file {file_path} after DB error: {remove_exc}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error saving file metadata")
+
+    return {"filename": safe_filename, "filepath": str(db_file.filepath), "file_id": db_file.id, "meeting_id": meeting.id, "message": "Audio uploaded successfully"}
 
 @router.post("/meetings/{meeting_id}/chat")
 async def chat_with_meeting(

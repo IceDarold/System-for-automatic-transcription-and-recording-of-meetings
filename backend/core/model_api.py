@@ -1,11 +1,22 @@
 import httpx
+import logging
 from typing import List, Dict, Any, Optional
 from core.config import settings
 from models.transcript import TranscriptBlock
 
+logger = logging.getLogger(__name__)
+
 class ModelAPIError(Exception):
-    """Base exception for model-api errors"""
-    pass
+    """Custom exception for Model API errors."""
+    def __init__(self, message: str, status_code: Optional[int] = None, detail: Optional[Any] = None):
+        super().__init__(message)
+        self.status_code = status_code
+        self.detail = detail
+
+    def __str__(self):
+        if self.status_code is not None:
+            return f"{self.status_code} {super().__str__()} Detail: {self.detail}"
+        return super().__str__()
 
 class ModelAPIClient:
     def __init__(self):
@@ -16,18 +27,42 @@ class ModelAPIClient:
         self,
         method: str,
         endpoint: str,
-        **kwargs
+        data: Optional[Dict[str, Any]] = None,
+        files: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Make a request to model-api"""
-        url = f"{self.base_url}{endpoint}"
+        url = f"{self.base_url}/{endpoint}"
+        headers = {"Authorization": f"Bearer {self.api_key}"}
         
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.request(method, url, **kwargs)
+                if method.upper() == "GET":
+                    response = await client.get(url, headers=headers, params=data)
+                elif method.upper() == "POST":
+                    response = await client.post(url, headers=headers, json=data, files=files)
+                else:
+                    raise ValueError(f"Unsupported HTTP method: {method}")
+
                 response.raise_for_status()
                 return response.json()
-        except httpx.HTTPError as e:
-            raise ModelAPIError(f"Model API request failed: {str(e)}")
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Model API request failed: {e.response.status_code} - {e.response.text}")
+            # Extract more details if available, e.g., from a JSON response
+            try:
+                error_detail = e.response.json()
+            except ValueError:
+                error_detail = e.response.text
+            raise ModelAPIError(
+                message=f"Model API request failed for {endpoint}",
+                status_code=e.response.status_code,
+                detail=error_detail
+            ) from e
+        except httpx.RequestError as e:
+            logger.error(f"Model API request error: {e}")
+            raise ModelAPIError(f"Model API request error for {endpoint}: {e}") from e
+        except Exception as e:
+            logger.exception(f"An unexpected error occurred in ModelAPIClient for {endpoint}")
+            raise ModelAPIError(f"An unexpected error occurred in ModelAPIClient for {endpoint}: {e}") from e
     
     async def transcribe_audio(
         self,
