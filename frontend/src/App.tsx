@@ -14,14 +14,10 @@ import AllMeetingsPage from "./page/allMeetingsPage";
 import ProfleTeam from "./page/ProfileTeam";
 import CreatePage from "./page/createPage";
 import Meeting from "./page/Meeting";
+import UserPage from "./page/userPage";
+import { ProtectedRoute } from "./components/Protected";
 
 function App() {
-  const [access_token, setAccess_token] = useState<string | null>(
-    localStorage.getItem("access_token")
-  );
-  useEffect(() => {
-    setAccess_token(localStorage.getItem("access_token"));
-  });
   return (
     <Router>
       <Routes>
@@ -29,15 +25,14 @@ function App() {
           <Route
             path="/"
             element={
-              access_token ? (
+              <ProtectedRoute>
                 <Navigate to="/allMeetings" replace />
-              ) : (
-                <Navigate to="/login" replace />
-              )
+              </ProtectedRoute>
             }
           />
           {/* -------Login----- */}
           <Route path="/login" element={<Login />} />
+          <Route path="/user/:id" element={<UserPage />} />
           {/* ------AllMeetengs----- */}
           <Route path="/allMeetings" element={<AllMeetingsPage />} />
           <Route path="/meetings/:id" element={<Meeting />} />
@@ -49,6 +44,7 @@ function App() {
           <Route path="/teams/:id" element={<ProfleTeam />} />
           {/* --------DEV----- */}
           <Route path="/dev" element={<DevMode />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </Router>

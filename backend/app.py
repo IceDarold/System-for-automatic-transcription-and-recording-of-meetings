@@ -499,14 +499,14 @@ def team(team_id: str):
 
 @app.get(apiLink + "/meetings/{meeting_id}/audio")
 def audio(meeting_id):
-  file_path = os.path.join("./audio", "1.mp3")
-  return FileResponse(path=file_path, media_type="audio/mpeg", filename="1.mp3")
+  file_path = os.path.join("./audio", "2.mp3")
+  return FileResponse(path=file_path, media_type="audio/mpeg", filename="2.mp3")
 
 
 @app.get(apiLink + "/meetings/{id}")
 def getDataMeetings(id: int):
   return {
-    "title": f"Новый проект {id}",
+    "title": f"Планы на экономическое разватие за 3 квартал",
 "tags": [
   "стратегия",
   "продукт",
@@ -521,3 +521,70 @@ def getDataMeetings(id: int):
 ], "description": "Еженедельный созвон команды для обсуждения текущих задач, прогресса по проектам, выявления блокеров и планов на ближайшую неделю.\n\
     Цель: синхронизация участников, повышение прозрачности процессов и оперативное решение возникающих вопросов. "
   }
+  
+  
+@app.get(apiLink + "/users/{id}")
+def getUserInfo(id: int):
+  fakeusers = [
+  {
+    "email": "ivanov@example.com",
+    "first_name": "Иван",
+    "last_name": "Иванов",
+    "middle_name": "Иванович",
+    "id": 1,
+    "role": "user",
+    "is_active": True,
+    "created_at": "2025-05-07T23:50:54.349Z",
+    "updated_at": "2025-05-07T23:50:54.350Z"
+  },
+  {
+    "email": "petrov@example.com",
+    "first_name": "Пётр",
+    "last_name": "Петров",
+    "middle_name": "",
+    "id": 2,
+    "role": "admin",
+    "is_active": False,
+    "created_at": "2025-05-06T12:30:15.200Z",
+    "updated_at": "2025-05-06T12:35:00.100Z"
+  },
+  {
+    "email": "sidorova@example.com",
+    "first_name": "Анна",
+    "last_name": "Сидорова",
+    "middle_name": "Николаевна",
+    "id": 3,
+    "role": "user",
+    "is_active": True,
+    "created_at": "2025-05-05T08:10:22.000Z",
+    "updated_at": "2025-05-05T08:15:30.000Z"
+  },
+  {
+    "email": "smirnov@example.com",
+    "first_name": "Алексей",
+    "last_name": "Смирнов",
+    "middle_name": "Сергеевич",
+    "id": 4,
+    "role": "user",
+    "is_active": True,
+    "created_at": "2025-05-04T18:45:00.000Z",
+    "updated_at": "2025-05-04T18:50:10.000Z"
+  },
+  {
+    "email": "kuznetsov@example.com",
+    "first_name": "Дмитрий",
+    "last_name": "Кузнецов",
+    "middle_name": "",
+    "id": 5,
+    "role": "admin",
+    "is_active": True,
+    "created_at": "2025-05-03T10:05:40.000Z",
+    "updated_at": "2025-05-03T10:10:20.000Z"
+  }
+]
+  
+  return fakeusers[id-1]
+
+@app.get(apiLink + "/teams/{id}/members")
+def getMembersInTeam(id: int):
+  return {"ids": ["1", "2", "3", "4", "5"]}

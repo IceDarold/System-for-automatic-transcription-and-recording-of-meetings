@@ -4,7 +4,7 @@ import CardMyProject from "../components/CardMyProject";
 import Page from "./page";
 import Badge from "../components/Badge";
 import Icon from "../Icons/Icon";
-import { root } from "../config";
+import { ApiLink, root } from "../config";
 
 interface PostData {
   link: string;
@@ -23,30 +23,51 @@ interface teamData {
   posts: PostData[] | null;
 }
 
-export function RightSidebar(props: any) {
-  const email = "fake@email.ru";
-  if (props.visble) {
-    return (
-      <div className="rightSidebar">
-        <CardMyProject main={props.title} description={email} />
-        <CardMyProject main={props.title} description={email} />
-        <CardMyProject main={props.title} description={email} />
-        <CardMyProject main={props.title} description={email} />
-        <CardMyProject main={props.title} description={email} />
-      </div>
-    );
-  } else {
-    return <></>;
-  }
+interface Member {
+  email: string;
+  name: string;
+  id: string;
+}
+
+interface usersId {
+  ids: string[];
 }
 
 export default function ProfleTeam() {
   const location = useLocation();
   const [data, setData] = useState<teamData | null>(null);
+  const [dataUsers, setDataUsers] = useState<Member[]>([]);
+  const [dataMembers, setDataMembers] = useState<Member[]>([]);
   const [visible, setVisible] = useState<boolean>(false);
   const { id } = useParams();
+  async function fetchUsers(id: string) {
+    const response = await fetch(root + ApiLink + `/users/${id}`);
+    const resp = await response.json();
+    // console.log(resp);
+    const dat: Member = {
+      email: resp.email,
+      name: resp.first_name + " " + resp.last_name,
+      id: resp.id,
+    };
+    setDataUsers((prev) => [...prev, dat]);
+  }
+  async function fetchTeamMembers() {
+    try {
+      const response = await fetch(root + ApiLink + `/teams/${id}/members`);
+      const data_resoponse_user = await response.json();
+      setDataUsers([]);
+      data_resoponse_user.ids.map((item: string) => {
+        fetchUsers(item);
+      });
+      console.log(dataUsers, "datausers");
+      setDataMembers(dataUsers);
+      // console.log(dataMembers);
+    } catch (e) {
+      console.log(e);
+    }
+  }
   async function fetchTeamId() {
-    const response = await fetch(root + `/api/v1/teams/${id}`, {
+    const response = await fetch(root + ApiLink + `/teams/${id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -81,6 +102,7 @@ export default function ProfleTeam() {
   };
   useEffect(() => {
     fetchTeamId();
+    fetchTeamMembers();
   }, []);
   useEffect(() => {
     acceptRightPaddings(visible);
@@ -103,6 +125,7 @@ export default function ProfleTeam() {
                   main="Посмотреть участников команды"
                   onClick={() => {
                     setVisible(!visible);
+                    fetchTeamMembers();
                   }}
                   hover="true"
                 />
@@ -121,13 +144,24 @@ export default function ProfleTeam() {
                       <div>
                         <Icon color="#fff" type="milestone" />
                       </div>
-                      <p>Постов пока нет</p>
+                      <p>Встреч пока нет</p>
                     </div>
                   )}
                 </div>
               </div>
               <div className="thirdBlockOfBoardPosts">
-                <RightSidebar title={data.title} visble={visible} />
+                {visible ? (
+                  <div className="rightSidebar">
+                    {dataMembers.map((item: Member) => (
+                      <CardMyProject
+                        main={item.name}
+                        description={item.email}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <></>
+                )}
               </div>
             </div>
           </div>

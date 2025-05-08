@@ -3,7 +3,7 @@ import Searcher from "../components/Searcher";
 import { useNavigate } from "react-router-dom";
 import CardMyProject from "../components/CardMyProject";
 import { useEffect, useState } from "react";
-import { root } from "../config";
+import { ApiLink, root } from "../config";
 
 interface CardData {
   id: number;
@@ -31,7 +31,7 @@ function MyProjectPage() {
   const navigate = useNavigate();
   async function fetchMeetings() {
     try {
-      const response = await fetch(root + "/api/v1/meetings", {
+      const response = await fetch(root + ApiLink + "/meetings", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +78,7 @@ function MyProjectPage() {
               description={item.description}
               status={item.status}
               onClick={() => {
-                navigate("/meetings/edit/" + item.id);
+                navigate("/meetings/" + item.id);
               }}
               hover="true"
               usekeyasid="false"

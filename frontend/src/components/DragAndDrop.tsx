@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { ApiLink } from "../config";
 
 interface FileDropProps {
   onFileAccepted: (files: File[] | null) => void;
@@ -42,7 +43,7 @@ const FileDrop: React.FC<FileDropProps> = ({ onFileAccepted, claass }) => {
     }
     var status = "ok";
     try {
-      const response = await fetch(root + "/loadvideo", {
+      const response = await fetch(root + ApiLink + "/loadvideo", {
         method: "POST",
         body: formData,
       });
@@ -142,6 +143,7 @@ const FileDrop: React.FC<FileDropProps> = ({ onFileAccepted, claass }) => {
         multiple
         onChange={handleFileInputChange}
         style={{ display: "none" }}
+        accept="video/*,audio/*"
       />
     </div>
   );

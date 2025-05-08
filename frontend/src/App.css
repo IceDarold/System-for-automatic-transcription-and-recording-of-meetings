@@ -82,6 +82,7 @@
 .sidebar-block-items {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 .sidebar-item {
   text-align: center;
@@ -93,6 +94,13 @@
 
 .sidebar-item:hover {
   cursor: pointer;
+}
+
+.sidebar-items {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 100px);
+  justify-content: space-between;
 }
 
 [data-status-sidebar-item="active"] {
@@ -412,6 +420,8 @@
 }
 
 .primaryButton {
+  display: flex;
+  height: 100%;
   white-space: nowrap;
   padding: 10px 12px;
   color: #fff;
@@ -419,6 +429,8 @@
   border: 0;
   border-radius: 8px;
   background-color: var(--primary-color-high);
+  justify-content: center;
+  align-items: center;
 }
 .primaryButton:hover {
   cursor: pointer;
@@ -724,6 +736,10 @@
   align-items: center;
 }
 
+.panelSelect:hover {
+  cursor: pointer;
+}
+
 .panelSelect p {
   color: #fff;
   font-weight: 500;
@@ -735,4 +751,89 @@
 
 [data-panel-selected="false"] {
   background-color: var(--secondary-lower);
+}
+
+.chat {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.contentSessionChat {
+  flex: 1;
+  max-height: calc(100vh - 200px);
+  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: scroll;
+}
+
+.contentSessionChat::-webkit-scrollbar {
+  display: none;
+}
+
+.message-type-user {
+  display: flex;
+  align-self: flex-end;
+  background-color: var(--secondary-medium2);
+  color: #fff;
+}
+
+.message-type-bot {
+  display: flex;
+  align-self: flex-start;
+  color: #fff;
+  font-weight: 500;
+  background-color: var(--secondary-lower);
+}
+
+.message-type-bot,
+.message-type-user {
+  position: relative;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.inputMessageChat {
+  display: flex;
+  width: 100%;
+  /* flex: 1; */
+  flex-direction: row;
+  gap: 4px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.inputMessageChat textarea {
+  width: 100%;
+  resize: none;
+  word-wrap: break-word;
+  background-color: var(--secondary-medium1);
+  color: #fff;
+  border: 0;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.inputMessageChat textarea:focus {
+  outline: none;
+}
+
+.contentTranscription {
+  margin-top: 16px;
+  max-height: calc(100vh - 200px);
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.contentTranscription::-webkit-scrollbar {
+  display: none;
+}
+
+.stats {
+  color: #fff;
 }

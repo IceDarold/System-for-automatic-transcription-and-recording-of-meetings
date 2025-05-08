@@ -3,7 +3,7 @@ import Searcher from "../components/Searcher";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CardMyProject from "../components/CardMyProject";
-import { root } from "../config";
+import { ApiLink, root } from "../config";
 
 interface CardData {
   id: number;
@@ -19,7 +19,7 @@ export default function MyTeamsPage() {
   const navigate = useNavigate();
   async function fetchMeetings() {
     try {
-      const response = await fetch(root + "/api/v1/teams", {
+      const response = await fetch(root + ApiLink + "/teams", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
