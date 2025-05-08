@@ -73,4 +73,24 @@ async def get_user_logs(
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
             detail="Audit logging is not implemented"
-        ) 
+        )
+
+@router.get("/users/{user_id}", response_model=UserResponse)
+async def get_user_by_id(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Получение информации о пользователе по его ID.
+    Доступно любому аутентифицированному пользователю.
+    """
+    # TODO: Добавить логику авторизации. Кто должен иметь право вызывать этот эндпоинт? Только админы? Любой пользователь?
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found"
+        )
+    # FastAPI автоматически преобразует объект user с помощью UserResponse
+    return user 

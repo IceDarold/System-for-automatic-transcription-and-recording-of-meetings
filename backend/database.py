@@ -5,9 +5,9 @@ from sqlalchemy.pool import NullPool
 from core.config import settings
 import logging
 import time
-from alembic.config import Config
-from alembic import command
 import os
+import importlib
+from pathlib import Path
 
 # Get a logger instance (logging is configured in app.py or logging_config.py)
 logger = logging.getLogger(__name__) # Use module name for library loggers
@@ -21,50 +21,48 @@ engine = None
 SessionLocal = None
 
 def init_db():
-    """Initialize database connection, run migrations, and configure SessionLocal"""
-    global engine, SessionLocal  # Declare intent to modify global variables
+    """Initialize database connection and configure SessionLocal. Returns engine and session factory."""
+    global engine, SessionLocal
     max_retries = 5
-    retry_delay = 5  # seconds
+    retry_delay = 5
     
     for attempt in range(max_retries):
         try:
-            # Create engine with connection timeout
             current_engine = create_engine(
                 SQLALCHEMY_DATABASE_URL,
-                pool_pre_ping=True,  # Enable connection health checks
-                pool_recycle=3600,   # Recycle connections after 1 hour
-                connect_args={"connect_timeout": 10},  # 10 seconds timeout
+                pool_pre_ping=True,
+                pool_recycle=3600,
+                connect_args={"connect_timeout": 10},
                 client_encoding='utf8'
             )
             
-            # Test connection
             with current_engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
             
             logger.info("Successfully connected to the database")
             
-            # Run migrations
-            try:
-                alembic_ini_path = os.path.join(os.path.dirname(__file__), "alembic.ini")
-                alembic_cfg = Config(alembic_ini_path)
-                # Important: Provide the script location for Alembic
-                alembic_cfg.set_main_option("script_location", os.path.join(os.path.dirname(__file__), "alembic"))
-                
-                # Alembic needs a connection to run migrations online.
-                # We pass the engine's URL to AlembicConfig for it to create its own engine/connection.
-                # Alternatively, one could pass a connection directly to command.upgrade if context is managed.
-                # For simplicity with existing env.py, ensuring sqlalchemy.url is set is often easiest.
-                alembic_cfg.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
-
-                command.upgrade(alembic_cfg, "head")
-                logger.info("Database migrations completed successfully")
-            except Exception as e:
-                logger.error(f"Error running migrations: {str(e)}")
-                raise
+            # Import all models to ensure Base.metadata is populated
+            def import_all_models_for_create_all():
+                 models_dir = Path(__file__).resolve().parent / "models"
+                 for py_file in models_dir.glob("*.py"):
+                      if py_file.name != "__init__.py":
+                           module_name = f"models.{py_file.stem}"
+                           try:
+                                importlib.import_module(module_name)
+                                logger.debug(f"Imported {module_name} for metadata.")
+                           except ImportError as ie:
+                                logger.warning(f"Could not import {module_name}: {ie}")
             
-            engine = current_engine # Assign to global engine
-            SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-            return engine
+            import_all_models_for_create_all()
+            logger.info("Creating database tables based on models (if they don't exist)...")
+            Base.metadata.create_all(bind=current_engine)
+            logger.info("Database tables checked/created successfully.")
+            
+            engine = current_engine
+            local_session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+            SessionLocal = local_session_factory
+            logger.info("Engine and SessionLocal initialized.")
+            return engine, local_session_factory
             
         except SQLAlchemyError as e:
             if attempt < max_retries - 1:
@@ -74,7 +72,9 @@ def init_db():
             else:
                 logger.error(f"Failed to connect to database after {max_retries} attempts")
                 raise
-    return None # Should not be reached if successful
+                
+    logger.error("init_db loop completed without successful initialization.")
+    return None, None
 
 # Remove automatic initialization:
 # # Initialize database

@@ -6,6 +6,7 @@ echo "Host: $POSTGRES_SERVER"
 echo "Port: $POSTGRES_PORT"
 echo "User: $POSTGRES_USER"
 echo "Database: $POSTGRES_DB"
+echo "Reset DB: $RESET_DB"
 
 # Ждем, пока база данных будет готова
 echo "Waiting for database..."
@@ -31,7 +32,7 @@ fi
 # Проверка, нужно ли сбросить базу данных
 if [ "$RESET_DB" = "true" ]; then
     echo "Resetting database..."
-    python scripts/reset_db.py
+    python scripts/reset_db.py --force
 else
     # Применяем миграции
     echo "Running database migrations..."

@@ -1,9 +1,8 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 from datetime import datetime, timedelta
 import random
 from typing import List
 
-from database import SessionLocal
 from models.meeting import Meeting, Tag
 from models.user import User, UserRole
 
@@ -67,8 +66,8 @@ def create_mock_meetings(db: Session, users: List[User], tags: List[Tag]):
     else:
         print("No new meetings created")
 
-def seed_database():
-    db = SessionLocal()
+def seed_database(session_factory: sessionmaker):
+    db: Session = session_factory()
     try:
         # Получаем существующих пользователей
         users = db.query(User).all()
@@ -86,4 +85,14 @@ def seed_database():
         db.close()
 
 if __name__ == "__main__":
-    seed_database() 
+    # При прямом запуске нужна инициализация БД и фабрика
+    try:
+        from database import SessionLocal, init_db
+        print("Initializing DB for direct meeting seeding...")
+        init_db()
+        print("Seeding meetings directly...")
+        seed_database(SessionLocal)
+    except ImportError:
+        print("Could not import DB components. Run via reset_db.py or seed_all.py.")
+    except Exception as e:
+        print(f"Error during direct meeting seeding: {e}") 

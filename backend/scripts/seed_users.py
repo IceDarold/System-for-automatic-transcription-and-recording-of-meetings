@@ -1,9 +1,8 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 from datetime import datetime
 from typing import List
 import hashlib
 
-from database import SessionLocal
 from models.user import User, UserRole
 
 def create_mock_users(db: Session) -> List[User]:
@@ -52,8 +51,8 @@ def create_mock_users(db: Session) -> List[User]:
     db.commit()
     return users
 
-def seed_users():
-    db = SessionLocal()
+def seed_users(session_factory: sessionmaker):
+    db: Session = session_factory()
     try:
         # Проверяем, есть ли уже пользователи
         existing_users = db.query(User).first()
@@ -68,4 +67,14 @@ def seed_users():
         db.close()
 
 if __name__ == "__main__":
-    seed_users() 
+    # При прямом запуске нужна инициализация БД и фабрика
+    try:
+        from database import SessionLocal, init_db
+        print("Initializing DB for direct user seeding...")
+        init_db()
+        print("Seeding users directly...")
+        seed_users(SessionLocal)
+    except ImportError:
+        print("Could not import DB components. Run via reset_db.py or seed_all.py.")
+    except Exception as e:
+        print(f"Error during direct user seeding: {e}") 
