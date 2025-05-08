@@ -1,0 +1,35 @@
+# Требуется Python >= 3.8
+# Web Framework
+fastapi>=0.100.0
+uvicorn>=0.15.0,<0.16.0
+python-multipart>=0.0.5,<0.0.6
+
+# Database
+SQLAlchemy>=2.0.29,<2.1.0
+alembic>=1.13.1,<1.14.0
+psycopg2-binary>=2.9.0,<3.0.0
+
+# Authentication & Security
+python-jose[cryptography]>=3.3.0,<3.4.0
+passlib[bcrypt]>=1.7.4,<1.8.0
+bcrypt==4.1.2
+
+# Data Validation & Settings
+pydantic>=2.3.0
+pydantic-settings>=2.1.0
+email-validator>=2.1.0
+
+# Environment & Utils
+python-dotenv>=1.0.0
+typing-extensions>=4.9.0
+python-json-logger>=2.0.7 # For structured JSON logging
+
+# CORS
+starlette>=0.36.0
+
+# HTTP Client
+httpx>=0.24.0,<0.25.0
+
+# Audio/Video processing
+ffmpeg-python>=0.2.0  # For audio/video processing  
+

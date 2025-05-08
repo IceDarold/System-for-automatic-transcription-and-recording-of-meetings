@@ -112,3 +112,7 @@ pip-selfcheck.json
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+frontend/node_modules
+
+
